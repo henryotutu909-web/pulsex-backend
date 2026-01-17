@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import sqlite3, time, os
 
 app = Flask(__name__)
+CORS(app)
+
 DB_NAME = "users.db"
 
 def get_db():
@@ -9,7 +12,7 @@ def get_db():
 
 @app.route("/claim", methods=["POST"])
 def claim():
-    data = request.json
+    data = request.get_json(force=True)
     user_id = data.get("user_id")
 
     if not user_id:
@@ -23,14 +26,11 @@ def claim():
     row = c.fetchone()
 
     if not row:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"error": "User not registered"}), 404
 
     if now - row[0] < 86400:
         remaining = 86400 - (now - row[0])
-        return jsonify({
-            "error": "Cooldown active",
-            "remaining": remaining
-        }), 403
+        return jsonify({"error": "Cooldown", "remaining": remaining}), 403
 
     c.execute(
         "UPDATE users SET points = points + 100, last_claim = ? WHERE user_id=?",
