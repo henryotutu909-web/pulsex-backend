@@ -1,50 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Pulsex Dashboard</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseX Dashboard</title>
+
+  <style>
+    :root {
+      --bg-dark: #0b0f1a;
+      --bg-card: #12182a;
+      --accent: #4f7cff;
+      --accent-soft: #6aa3ff;
+      --accent-glow: rgba(79, 124, 255, 0.6);
+      --text-main: #ffffff;
+      --text-muted: #b6c0ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #121a3a, var(--bg-dark));
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .user {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: linear-gradient(
+        180deg,
+        rgba(255,255,255,0.04),
+        rgba(255,255,255,0.01)
+      );
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(10px);
+    }
+
+    .label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .points {
+      font-size: 36px;
+      font-weight: 700;
+      margin: 8px 0;
+      color: var(--accent-soft);
+    }
+
+    .countdown {
+      font-size: 16px;
+      margin-top: 6px;
+    }
+
+    .claim-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 0 26px var(--accent-glow);
+      margin-top: 8px;
+    }
+
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10,14,30,0.85);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0;
+      backdrop-filter: blur(12px);
+    }
+
+    .nav a {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .nav a.active {
+      color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
 </head>
+
 <body>
 
-  <div class="dashboard">
-
-    <!-- HEADER -->
-    <header class="top-bar">
-      <h2>Pulsex Airdrop</h2>
-      <span class="username" id="username">@loading</span>
-    </header>
-
-    <!-- BALANCE CARD -->
-    <div class="balance-card">
-      <p class="label">Your Balance</p>
-      <h1 id="points">0</h1>
-      <span class="unit">PULSE POINTS</span>
-    </div>
-
-    <!-- COUNTDOWN -->
-    <div class="countdown-card">
-      <p>Next claim available in</p>
-      <h3 id="countdown">00:00:00</h3>
-    </div>
-
-    <!-- CLAIM BUTTON -->
-    <button class="claim-btn" id="claimBtn">
-      Claim Daily Reward
-    </button>
-
-    <!-- NAVIGATION -->
-    <nav class="bottom-nav">
-      <a href="/dashboard" class="active">Dashboard</a>
-      <a href="/tasks">Tasks</a>
-      <a href="/referrals">Referrals</a>
-      <a href="/wallet">Wallet</a>
-    </nav>
-
+  <div class="header">
+    <div class="title">PulseX</div>
+    <div class="user">@username</div>
   </div>
 
-  <!-- JS WIRES EVERYTHING -->
-  <script src="/static/js/app.js"></script>
+  <div class="card">
+    <div class="label">Your Balance</div>
+    <div class="points">0</div>
+    <div class="label">PULSE POINTS</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Next claim available in</div>
+    <div class="countdown">24:00:00</div>
+  </div>
+
+  <button class="claim-btn">Claim Daily Reward</button>
+
+  <div class="nav">
+    <a class="active" href="/dashboard">Dashboard</a>
+    <a href="/tasks">Tasks</a>
+    <a href="/referrals">Referrals</a>
+    <a href="/wallet">Wallet</a>
+  </div>
 
 </body>
 </html>
