@@ -1,6 +1,21 @@
+import os
 from flask import Flask, render_template
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+# -------------------------------------------------
+# FORCE ABSOLUTE PATHS (RENDER SAFE)
+# -------------------------------------------------
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
+)
+
+# -------------------------------------------------
+# PAGE ROUTES
+# -------------------------------------------------
 
 @app.route("/")
 def preview():
@@ -22,10 +37,20 @@ def referrals():
 def wallet():
     return render_template("wallet.html")
 
+# -------------------------------------------------
+# HEALTH CHECK (OPTIONAL, BUT USEFUL)
+# -------------------------------------------------
+
 @app.route("/health")
 def health():
     return "OK"
 
+# -------------------------------------------------
+# LOCAL / RENDER ENTRY POINT
+# -------------------------------------------------
+
 if __name__ == "__main__":
-    import os
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000))
+    )
