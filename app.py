@@ -19,14 +19,15 @@ app = Flask(
 # DATABASE CONNECTION
 # -------------------------------------------------
 
+import os
+import psycopg2
+
 def get_db():
     return psycopg2.connect(
-        host=os.environ["DB_HOST"],
-        database=os.environ["DB_NAME"],
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-        port=os.environ["DB_PORT"]
+        os.environ["DATABASE_URL"],
+        sslmode="require"
     )
+
 
 # -------------------------------------------------
 # PAGE ROUTES
@@ -145,3 +146,4 @@ def claim():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
