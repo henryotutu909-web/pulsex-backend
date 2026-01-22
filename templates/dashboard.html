@@ -142,6 +142,49 @@
     <a href="/referrals">Referrals</a>
     <a href="/wallet">Wallet</a>
   </div>
+<script>
+  const userId = Telegram.WebApp.initDataUnsafe.user.id;
+
+  async function loadUser() {
+    const res = await fetch(`/api/user/${userId}`);
+    const data = await res.json();
+
+    document.querySelector(".points").innerText = data.points;
+
+    if (data.next_claim) {
+      startCountdown(new Date(data.next_claim));
+    }
+  }
+
+  function startCountdown(target) {
+    setInterval(() => {
+      const diff = target - new Date();
+      if (diff <= 0) {
+        document.querySelector(".countdown").innerText = "Available";
+        return;
+      }
+
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      document.querySelector(".countdown").innerText =
+        `${h}:${m}:${s}`;
+    }, 1000);
+  }
+
+  document.querySelector(".claim-btn").onclick = async () => {
+    await fetch("/api/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId })
+    });
+    loadUser();
+  };
+
+  loadUser();
+</script>
 
 </body>
 </html>
+
