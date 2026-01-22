@@ -1,57 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <meta charset="UTF-8">
-  <title>Pulsex Referrals</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseX Referrals</title>
+
+  <style>
+    :root {
+      --bg-dark:#0b0f1a;
+      --bg-card:#12182a;
+      --accent:#4f7cff;
+      --text:#fff;
+      --muted:#b6c0ff;
+    }
+
+    * {margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI}
+
+    body {
+      background:radial-gradient(circle at top,#121a3a,var(--bg-dark));
+      color:var(--text);
+      padding:18px;
+      min-height:100vh;
+    }
+
+    h2 {margin-bottom:14px}
+
+    .card {
+      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:18px;
+      margin-bottom:16px;
+      animation:fade .6s ease;
+    }
+
+    .link {
+      word-break:break-all;
+      font-size:13px;
+      color:var(--muted);
+      margin-top:8px;
+    }
+
+    @keyframes fade {
+      from {opacity:0}
+      to {opacity:1}
+    }
+
+    .nav {
+      position:fixed;bottom:0;left:0;right:0;
+      background:rgba(10,14,30,.85);
+      display:flex;justify-content:space-around;
+      padding:12px 0;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+
+    .nav a {color:var(--muted);font-size:12px;text-decoration:none}
+    .nav a.active {color:var(--accent)}
+  </style>
 </head>
 <body>
 
-  <div class="dashboard">
+<h2>Referrals</h2>
 
-    <!-- HEADER -->
-    <header class="top-bar">
-      <h2>Referrals</h2>
-      <span class="username" id="username">@loading</span>
-    </header>
+<div class="card">
+  <div>Total Referrals</div>
+  <h1>0</h1>
+</div>
 
-    <!-- REFERRAL SUMMARY -->
-    <div class="referral-summary">
-      <div class="ref-box">
-        <p>Total Referrals</p>
-        <h2 id="refCount">0</h2>
-      </div>
-      <div class="ref-box">
-        <p>Points Earned</p>
-        <h2 id="refPoints">0</h2>
-      </div>
-    </div>
-
-    <!-- REFERRAL LINK -->
-    <div class="ref-link-box">
-      <p>Your Referral Link</p>
-      <input type="text" id="refLink" readonly>
-      <button class="copy-btn" onclick="copyRef()">Copy</button>
-    </div>
-
-    <!-- REFERRED USERS -->
-    <div class="referred-list">
-      <h3>Your Referrals</h3>
-      <ul id="refList"></ul>
-    </div>
-
-    <!-- NAV -->
-    <nav class="bottom-nav">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/tasks">Tasks</a>
-      <a href="/referrals" class="active">Referrals</a>
-      <a href="/wallet">Wallet</a>
-    </nav>
-
+<div class="card">
+  <div>Your Referral Link</div>
+  <div class="link">
+    https://t.me/pulsex_airdrop_bot?start=123456
   </div>
+</div>
 
-  <script src="/static/js/app.js"></script>
+<div class="nav">
+  <a href="/dashboard">Dashboard</a>
+  <a href="/tasks">Tasks</a>
+  <a class="active" href="/referrals">Referrals</a>
+  <a href="/wallet">Wallet</a>
+</div>
+
 </body>
 </html>
-
