@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pulsex Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <div class="dashboard">
+
+    <!-- HEADER -->
+    <header class="top-bar">
+      <h2>Pulsex Airdrop</h2>
+      <span class="username" id="username">@loading</span>
+    </header>
+
+    <!-- BALANCE CARD -->
+    <div class="balance-card">
+      <p class="label">Your Balance</p>
+      <h1 id="points">0</h1>
+      <span class="unit">PULSE POINTS</span>
+    </div>
+
+    <!-- COUNTDOWN -->
+    <div class="countdown-card">
+      <p>Next claim available in</p>
+      <h3 id="countdown">00:00:00</h3>
+    </div>
+
+    <!-- CLAIM BUTTON -->
+    <button class="claim-btn" id="claimBtn">
+      Claim Daily Reward
+    </button>
+
+    <!-- NAVIGATION -->
+    <nav class="bottom-nav">
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/tasks">Tasks</a>
+      <a href="/referrals">Referrals</a>
+      <a href="/wallet">Wallet</a>
+    </nav>
+
+  </div>
+
+  <!-- JS WIRES EVERYTHING -->
+  <script src="/static/js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pulsex Referrals</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <div class="dashboard">
+
+    <!-- HEADER -->
+    <header class="top-bar">
+      <h2>Referrals</h2>
+      <span class="username" id="username">@loading</span>
+    </header>
+
+    <!-- REFERRAL SUMMARY -->
+    <div class="referral-summary">
+      <div class="ref-box">
+        <p>Total Referrals</p>
+        <h2 id="refCount">0</h2>
+      </div>
+      <div class="ref-box">
+        <p>Points Earned</p>
+        <h2 id="refPoints">0</h2>
+      </div>
+    </div>
+
+    <!-- REFERRAL LINK -->
+    <div class="ref-link-box">
+      <p>Your Referral Link</p>
+      <input type="text" id="refLink" readonly>
+      <button class="copy-btn" onclick="copyRef()">Copy</button>
+    </div>
+
+    <!-- REFERRED USERS -->
+    <div class="referred-list">
+      <h3>Your Referrals</h3>
+      <ul id="refList"></ul>
+    </div>
+
+    <!-- NAV -->
+    <nav class="bottom-nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/tasks">Tasks</a>
+      <a href="/referrals" class="active">Referrals</a>
+      <a href="/wallet">Wallet</a>
+    </nav>
+
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
