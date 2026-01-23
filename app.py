@@ -88,6 +88,7 @@ def api_user(telegram_id):
 @app.route("/api/claim", methods=["POST"])
 def claim():
     data = request.json
+    print("CLAIM REQUEST DATA:", data)
     telegram_id = data.get("telegram_id")
     username = data.get("username", "guest")
 
@@ -127,4 +128,5 @@ def claim():
 # -----------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
 
