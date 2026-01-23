@@ -49,7 +49,7 @@ def preview():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashbord.html")
+    return render_template("dashboard.html")
 
 @app.route("/tasks")
 def tasks():
@@ -127,3 +127,4 @@ def claim():
 # -----------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
