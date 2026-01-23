@@ -1,38 +1,55 @@
 import os
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
 import psycopg2
+from flask import Flask, render_template, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
-# ---------------------------
-# DATABASE CONNECTION
-# ---------------------------
+# -----------------------
+# DATABASE
+# -----------------------
 def get_db():
-    return psycopg2.connect(
-        os.environ["DATABASE_URL"],
-        sslmode="require"
+    return psycopg2.connect(os.environ["DATABASE_URL"])
+
+def get_or_create_user(telegram_id, username="guest"):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT telegram_id, points, last_claim FROM users WHERE telegram_id = %s",
+        (telegram_id,)
     )
+    user = cur.fetchone()
 
-# ---------------------------
-# HEALTH CHECK
-# ---------------------------
-@app.route("/health")
-def health():
-    return "OK"
+    if not user:
+        cur.execute(
+            """
+            INSERT INTO users (telegram_id, username, points, last_claim)
+            VALUES (%s, %s, 0, NULL)
+            RETURNING telegram_id, points, last_claim
+            """,
+            (telegram_id, username)
+        )
+        user = cur.fetchone()
+        conn.commit()
 
-# ---------------------------
+    cur.close()
+    conn.close()
+    return user
+
+# -----------------------
 # PAGES
-# ---------------------------
+# -----------------------
 @app.route("/")
 def preview():
     return render_template("preview.html")
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashbord.html")
 
 @app.route("/tasks")
 def tasks():
@@ -46,103 +63,67 @@ def referrals():
 def wallet():
     return render_template("wallet.html")
 
-# ---------------------------
-# API: GET USER
-# ---------------------------
-@app.route("/api/user/<int:user_id>")
-def get_user(user_id):
-    try:
-        conn = get_db()
-        cur = conn.cursor()
+# -----------------------
+# API
+# -----------------------
+@app.route("/api/user/<telegram_id>")
+def api_user(telegram_id):
+    username = request.args.get("username", "guest")
+    user = get_or_create_user(telegram_id, username)
 
-        cur.execute(
-            "SELECT points, last_claim FROM users WHERE user_id=%s",
-            (user_id,)
-        )
-        row = cur.fetchone()
+    telegram_id, points, last_claim = user
 
-        if row:
-            points, last_claim = row
-            next_claim = (
-                last_claim + timedelta(hours=24)
-                if last_claim else None
-            )
-        else:
-            points = 0
-            next_claim = None
+    now = datetime.now(timezone.utc)
+    next_claim = None
 
-        cur.close()
-        conn.close()
+    if last_claim:
+        next_claim = last_claim + timedelta(hours=24)
 
-        return jsonify({
-            "points": points,
-            "next_claim": next_claim.isoformat() if next_claim else None
-        })
+    return jsonify({
+        "telegram_id": telegram_id,
+        "points": points,
+        "next_claim": next_claim.isoformat() if next_claim else None
+    })
 
-    except Exception as e:
-        print("GET USER ERROR:", e)
-        return jsonify({"error": "Service unavailable"}), 500
-
-# ---------------------------
-# API: CLAIM DAILY REWARD
-# ---------------------------
 @app.route("/api/claim", methods=["POST"])
 def claim():
-    try:
-        data = request.json
-        user_id = data.get("user_id")
+    data = request.json
+    telegram_id = data.get("telegram_id")
+    username = data.get("username", "guest")
 
-        if not user_id:
-            return jsonify({"error": "Invalid user"}), 400
+    user = get_or_create_user(telegram_id, username)
+    _, points, last_claim = user
 
-        conn = get_db()
-        cur = conn.cursor()
+    now = datetime.now(timezone.utc)
 
-        cur.execute(
-            "SELECT points, last_claim FROM users WHERE user_id=%s",
-            (user_id,)
-        )
-        row = cur.fetchone()
+    if last_claim and now < last_claim + timedelta(hours=24):
+        return jsonify({"error": "Claim not available yet"}), 400
 
-        now = datetime.utcnow()
+    conn = get_db()
+    cur = conn.cursor()
 
-        if row:
-            points, last_claim = row
+    new_points = points + 100
+    cur.execute(
+        """
+        UPDATE users
+        SET points = %s, last_claim = %s
+        WHERE telegram_id = %s
+        """,
+        (new_points, now, telegram_id)
+    )
 
-            if last_claim and now - last_claim < timedelta(hours=24):
-                cur.close()
-                conn.close()
-                return jsonify({"error": "Too early"}), 403
+    conn.commit()
+    cur.close()
+    conn.close()
 
-            points += 10
-            cur.execute(
-                "UPDATE users SET points=%s, last_claim=%s WHERE user_id=%s",
-                (points, now, user_id)
-            )
-        else:
-            points = 10
-            cur.execute(
-                "INSERT INTO users (user_id, points, last_claim) VALUES (%s,%s,%s)",
-                (user_id, points, now)
-            )
+    return jsonify({
+        "success": True,
+        "points": new_points,
+        "next_claim": (now + timedelta(hours=24)).isoformat()
+    })
 
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return jsonify({
-            "points": points,
-            "next_claim": (now + timedelta(hours=24)).isoformat()
-        })
-
-    except Exception as e:
-        print("CLAIM ERROR:", e)
-        return jsonify({
-            "error": "Service temporarily unavailable"
-        }), 500
-
-# ---------------------------
-# RUN LOCAL
-# ---------------------------
+# -----------------------
+# START
+# -----------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
