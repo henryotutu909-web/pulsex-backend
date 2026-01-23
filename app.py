@@ -1,38 +1,31 @@
 import os
-import psycopg2
-from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify
-
-# -------------------------------------------------
-# APP SETUP
-# -------------------------------------------------
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-app = Flask(
-    __name__,
-    template_folder=os.path.join(BASE_DIR, "templates"),
-    static_folder=os.path.join(BASE_DIR, "static")
-)
-
-# -------------------------------------------------
-# DATABASE CONNECTION
-# -------------------------------------------------
-
-import os
+from flask_cors import CORS
+from datetime import datetime, timedelta
 import psycopg2
 
+app = Flask(__name__)
+CORS(app)
+
+# ---------------------------
+# DATABASE CONNECTION
+# ---------------------------
 def get_db():
     return psycopg2.connect(
         os.environ["DATABASE_URL"],
         sslmode="require"
     )
 
+# ---------------------------
+# HEALTH CHECK
+# ---------------------------
+@app.route("/health")
+def health():
+    return "OK"
 
-# -------------------------------------------------
-# PAGE ROUTES
-# -------------------------------------------------
-
+# ---------------------------
+# PAGES
+# ---------------------------
 @app.route("/")
 def preview():
     return render_template("preview.html")
@@ -53,97 +46,103 @@ def referrals():
 def wallet():
     return render_template("wallet.html")
 
-# -------------------------------------------------
-# API — USER STATE
-# -------------------------------------------------
-
+# ---------------------------
+# API: GET USER
+# ---------------------------
 @app.route("/api/user/<int:user_id>")
 def get_user(user_id):
-    conn = get_db()
-    cur = conn.cursor()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
 
-    cur.execute(
-        "select points, last_claim from users where id=%s",
-        (user_id,)
-    )
-    row = cur.fetchone()
-
-    if not row:
         cur.execute(
-            "insert into users (id, points) values (%s, 0)",
+            "SELECT points, last_claim FROM users WHERE user_id=%s",
             (user_id,)
         )
-        conn.commit()
-        points = 0
-        last_claim = None
-    else:
-        points, last_claim = row
+        row = cur.fetchone()
 
-    cur.close()
-    conn.close()
+        if row:
+            points, last_claim = row
+            next_claim = (
+                last_claim + timedelta(hours=24)
+                if last_claim else None
+            )
+        else:
+            points = 0
+            next_claim = None
 
-    next_claim = (
-        (last_claim + timedelta(hours=24)).isoformat()
-        if last_claim else None
-    )
-
-    return jsonify({
-        "points": points,
-        "next_claim": next_claim
-    })
-
-# -------------------------------------------------
-# API — CLAIM DAILY POINTS
-# -------------------------------------------------
-
-@app.route("/api/claim", methods=["POST"])
-def claim():
-    data = request.json
-    user_id = data["user_id"]
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        "select points, last_claim from users where id=%s",
-        (user_id,)
-    )
-    row = cur.fetchone()
-
-    now = datetime.utcnow()
-
-    if row and row[1] and now < row[1] + timedelta(hours=24):
         cur.close()
         conn.close()
-        return jsonify({"error": "Too early"}), 400
 
-    if row:
+        return jsonify({
+            "points": points,
+            "next_claim": next_claim.isoformat() if next_claim else None
+        })
+
+    except Exception as e:
+        print("GET USER ERROR:", e)
+        return jsonify({"error": "Service unavailable"}), 500
+
+# ---------------------------
+# API: CLAIM DAILY REWARD
+# ---------------------------
+@app.route("/api/claim", methods=["POST"])
+def claim():
+    try:
+        data = request.json
+        user_id = data.get("user_id")
+
+        if not user_id:
+            return jsonify({"error": "Invalid user"}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+
         cur.execute(
-            """
-            update users
-            set points = points + 10,
-                last_claim = %s
-            where id = %s
-            """,
-            (now, user_id)
+            "SELECT points, last_claim FROM users WHERE user_id=%s",
+            (user_id,)
         )
-    else:
-        cur.execute(
-            """
-            insert into users (id, points, last_claim)
-            values (%s, 10, %s)
-            """,
-            (user_id, now)
-        )
+        row = cur.fetchone()
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        now = datetime.utcnow()
 
-    return jsonify({"success": True})
+        if row:
+            points, last_claim = row
 
-# -------------------------------------------------
+            if last_claim and now - last_claim < timedelta(hours=24):
+                cur.close()
+                conn.close()
+                return jsonify({"error": "Too early"}), 403
 
+            points += 10
+            cur.execute(
+                "UPDATE users SET points=%s, last_claim=%s WHERE user_id=%s",
+                (points, now, user_id)
+            )
+        else:
+            points = 10
+            cur.execute(
+                "INSERT INTO users (user_id, points, last_claim) VALUES (%s,%s,%s)",
+                (user_id, points, now)
+            )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "points": points,
+            "next_claim": (now + timedelta(hours=24)).isoformat()
+        })
+
+    except Exception as e:
+        print("CLAIM ERROR:", e)
+        return jsonify({
+            "error": "Service temporarily unavailable"
+        }), 500
+
+# ---------------------------
+# RUN LOCAL
+# ---------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
+    app.run(debug=True)
