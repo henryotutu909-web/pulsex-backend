@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PulseX Dashboard</title>
 
-  <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -18,12 +16,13 @@
       --accent-glow:rgba(79,124,255,.6);
       --text:#ffffff;
       --muted:#b6c0ff;
+      --disabled:#2a2f45;
     }
 
     * {
-      box-sizing:border-box;
       margin:0;
       padding:0;
+      box-sizing:border-box;
       font-family:"Segoe UI",Roboto,Arial,sans-serif;
     }
 
@@ -35,36 +34,21 @@
       padding-bottom:90px;
     }
 
-    /* Header */
     .header {
       display:flex;
       justify-content:space-between;
-      align-items:center;
       margin-bottom:22px;
     }
 
-    .title {
-      font-size:20px;
-      font-weight:700;
-    }
+    .title { font-size:20px;font-weight:700 }
+    .user { font-size:13px;color:var(--muted) }
 
-    .user {
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    /* Cards */
     .card {
-      background:linear-gradient(
-        180deg,
-        rgba(255,255,255,.04),
-        rgba(255,255,255,.01)
-      );
+      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
       border:1px solid rgba(255,255,255,.08);
       border-radius:16px;
       padding:22px;
       margin-bottom:18px;
-      backdrop-filter:blur(10px);
       animation:slideUp .6s ease forwards;
     }
 
@@ -73,10 +57,7 @@
       to {opacity:1;transform:translateY(0)}
     }
 
-    .label {
-      font-size:13px;
-      color:var(--muted);
-    }
+    .label { font-size:13px;color:var(--muted) }
 
     .points {
       font-size:36px;
@@ -87,41 +68,35 @@
     }
 
     @keyframes pulse {
-      0% {text-shadow:0 0 0 transparent}
+      0% {text-shadow:none}
       50% {text-shadow:0 0 18px var(--accent-glow)}
-      100% {text-shadow:0 0 0 transparent}
+      100% {text-shadow:none}
     }
 
-    .countdown {
-      font-size:16px;
-      margin-top:6px;
-    }
+    .countdown { font-size:16px;margin-top:6px }
 
-    /* Claim button */
     .claim-btn {
       width:100%;
       padding:16px;
       border-radius:14px;
-      background:linear-gradient(135deg,var(--accent),var(--accent-soft));
       border:none;
-      color:#fff;
-      font-weight:600;
       font-size:16px;
+      font-weight:600;
+      background:linear-gradient(135deg,var(--accent),var(--accent-soft));
+      color:#fff;
       box-shadow:0 0 26px var(--accent-glow);
-      transition:transform .15s ease, box-shadow .15s ease;
+      transition:all .2s ease;
     }
 
-    .claim-btn:active {
-      transform:scale(.97);
-      box-shadow:0 0 12px var(--accent-glow);
+    .claim-btn:disabled {
+      background:var(--disabled);
+      box-shadow:none;
+      color:#888;
     }
 
-    /* Bottom nav */
     .nav {
       position:fixed;
-      bottom:0;
-      left:0;
-      right:0;
+      bottom:0;left:0;right:0;
       background:rgba(10,14,30,.85);
       border-top:1px solid rgba(255,255,255,.08);
       display:flex;
@@ -145,106 +120,117 @@
 
 <body>
 
-  <div class="header">
-    <div class="title">PulseX</div>
-    <div class="user" id="username">@user</div>
-  </div>
+<div class="header">
+  <div class="title">PulseX</div>
+  <div class="user" id="username">@guest</div>
+</div>
 
-  <div class="card">
-    <div class="label">Your Balance</div>
-    <div class="points" id="points">0</div>
-    <div class="label">PULSE POINTS</div>
-  </div>
+<div class="card">
+  <div class="label">Your Balance</div>
+  <div class="points" id="points">0</div>
+  <div class="label">PULSE POINTS</div>
+</div>
 
-  <div class="card">
-    <div class="label">Next claim available in</div>
-    <div class="countdown" id="countdown">Loading…</div>
-  </div>
+<div class="card">
+  <div class="label">Next claim available in</div>
+  <div class="countdown" id="countdown">Loading…</div>
+</div>
 
-  <button class="claim-btn" id="claimBtn">Claim Daily Reward</button>
+<button class="claim-btn" id="claimBtn">Claim Daily Reward</button>
 
-  <div class="nav">
-    <a class="active" href="/dashboard">Dashboard</a>
-    <a href="/tasks">Tasks</a>
-    <a href="/referrals">Referrals</a>
-    <a href="/wallet">Wallet</a>
-  </div>
+<div class="nav">
+  <a class="active" href="/dashboard">Dashboard</a>
+  <a href="/tasks">Tasks</a>
+  <a href="/referrals">Referrals</a>
+  <a href="/wallet">Wallet</a>
+</div>
 
-  <!-- LOGIC -->
-  <script>
-    /* -----------------------------------------
-       SAFE TELEGRAM USER HANDLING
-    ----------------------------------------- */
-    let userId = 123456;
-    let username = "guest";
+<script>
+  /* ---------------- USER SAFE MODE ---------------- */
+  let userId = 123456;
+  let username = "guest";
 
-    if (window.Telegram && Telegram.WebApp?.initDataUnsafe?.user) {
-      const tgUser = Telegram.WebApp.initDataUnsafe.user;
-      userId = tgUser.id;
-      username = tgUser.username || "user";
-    }
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    const u = Telegram.WebApp.initDataUnsafe.user;
+    userId = u.id;
+    username = u.username || "user";
+  }
 
-    document.getElementById("username").innerText = "@" + username;
+  document.getElementById("username").innerText = "@" + username;
 
-    /* -----------------------------------------
-       LOAD USER DATA
-    ----------------------------------------- */
-    async function loadUser() {
+  const pointsEl = document.getElementById("points");
+  const countdownEl = document.getElementById("countdown");
+  const claimBtn = document.getElementById("claimBtn");
+
+  let countdownTimer = null;
+
+  /* ---------------- LOAD USER ---------------- */
+  async function loadUser() {
+    try {
       const res = await fetch(`/api/user/${userId}`);
       const data = await res.json();
 
-      document.getElementById("points").innerText = data.points;
+      const points = Number(data.points) || 0;
+      pointsEl.innerText = points;
 
       if (data.next_claim) {
         startCountdown(new Date(data.next_claim));
+        claimBtn.disabled = true;
       } else {
-        document.getElementById("countdown").innerText = "Available";
+        countdownEl.innerText = "Available";
+        claimBtn.disabled = false;
       }
+    } catch {
+      pointsEl.innerText = "0";
+      countdownEl.innerText = "Unavailable";
+      claimBtn.disabled = true;
     }
+  }
 
-    /* -----------------------------------------
-       COUNTDOWN TIMER
-    ----------------------------------------- */
-    function startCountdown(target) {
-      const el = document.getElementById("countdown");
+  /* ---------------- COUNTDOWN ---------------- */
+  function startCountdown(target) {
+    if (countdownTimer) clearInterval(countdownTimer);
 
-      const timer = setInterval(() => {
-        const diff = target - new Date();
-
-        if (diff <= 0) {
-          clearInterval(timer);
-          el.innerText = "Available";
-          return;
-        }
-
-        const h = String(Math.floor(diff / 3600000)).padStart(2, "0");
-        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
-        const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
-
-        el.innerText = `${h}:${m}:${s}`;
-      }, 1000);
-    }
-
-    /* -----------------------------------------
-       CLAIM BUTTON (FIXED)
-    ----------------------------------------- */
-    document.getElementById("claimBtn").onclick = async () => {
-      const res = await fetch("/api/claim", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ user_id:userId })
-      });
-
-      if (res.ok) {
-        loadUser();
-      } else {
-        alert("Claim not available yet. Please wait.");
+    countdownTimer = setInterval(() => {
+      const diff = target - new Date();
+      if (diff <= 0) {
+        clearInterval(countdownTimer);
+        countdownEl.innerText = "Available";
+        claimBtn.disabled = false;
+        return;
       }
-    };
 
-    loadUser();
-  </script>
+      const h = String(Math.floor(diff / 3600000)).padStart(2,"0");
+      const m = String(Math.floor((diff % 3600000)/60000)).padStart(2,"0");
+      const s = String(Math.floor((diff % 60000)/1000)).padStart(2,"0");
+
+      countdownEl.innerText = `${h}:${m}:${s}`;
+    }, 1000);
+  }
+
+  /* ---------------- CLAIM ---------------- */
+  claimBtn.onclick = async () => {
+    claimBtn.disabled = true;
+    claimBtn.innerText = "Claiming…";
+
+    const res = await fetch("/api/claim", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ user_id:userId })
+    });
+
+    if (res.ok) {
+      claimBtn.innerText = "Claimed ✓";
+      loadUser();
+    } else {
+      alert("Claim not available yet. Please wait.");
+      claimBtn.innerText = "Claim Daily Reward";
+      loadUser();
+    }
+  };
+
+  loadUser();
+</script>
 
 </body>
 </html>
-
