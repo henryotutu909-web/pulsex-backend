@@ -1,44 +1,30 @@
 import os
 from datetime import datetime, timedelta, timezone
 
-import psycopg2
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import psycopg2
+import psycopg2.extras
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 CORS(app)
 
-# ---------------- DB ----------------
+# -------------------------
+# DATABASE CONNECTION
+# -------------------------
 def get_db():
-    return psycopg2.connect(os.environ["DATABASE_URL"])
-
-def get_or_create_user(telegram_id):
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        "SELECT telegram_id, points, last_claim FROM users WHERE telegram_id = %s",
-        (telegram_id,)
+    return psycopg2.connect(
+        host=os.environ["DB_HOST"],
+        dbname=os.environ["DB_NAME"],
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        port=os.environ["DB_PORT"],
+        sslmode="require"
     )
-    user = cur.fetchone()
 
-    if not user:
-        cur.execute(
-            """
-            INSERT INTO users (telegram_id, points, last_claim)
-            VALUES (%s, 0, NULL)
-            RETURNING telegram_id, points, last_claim
-            """,
-            (telegram_id,)
-        )
-        conn.commit()
-        user = cur.fetchone()
-
-    cur.close()
-    conn.close()
-    return user
-
-# ---------------- PAGES ----------------
+# -------------------------
+# ROUTES (PAGES)
+# -------------------------
 @app.route("/")
 def preview():
     return render_template("preview.html")
@@ -47,46 +33,99 @@ def preview():
 def dashboard():
     return render_template("dashboard.html")
 
-# ---------------- API ----------------
-@app.route("/api/user/<telegram_id>")
-def api_user(telegram_id):
-    user = get_or_create_user(telegram_id)
-    telegram_id, points, last_claim = user
+@app.route("/tasks")
+def tasks():
+    return render_template("tasks.html")
+
+@app.route("/referrals")
+def referrals():
+    return render_template("referrals.html")
+
+@app.route("/wallet")
+def wallet():
+    return render_template("wallet.html")
+
+# -------------------------
+# API — GET OR CREATE USER
+# -------------------------
+@app.route("/api/user/<int:telegram_id>")
+def get_user(telegram_id):
+    username = request.args.get("username", "guest")
+
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute(
+        "SELECT telegram_id, username, points, last_claim FROM users WHERE telegram_id = %s",
+        (telegram_id,)
+    )
+    user = cur.fetchone()
+
+    if not user:
+        cur.execute(
+            """
+            INSERT INTO users (telegram_id, username, points, last_claim)
+            VALUES (%s, %s, 0, NULL)
+            RETURNING telegram_id, username, points, last_claim
+            """,
+            (telegram_id, username)
+        )
+        user = cur.fetchone()
+        conn.commit()
+
+    cur.close()
+    conn.close()
 
     next_claim = None
-    if last_claim:
-        next_claim = last_claim + timedelta(hours=24)
+    if user["last_claim"]:
+        next_claim = (user["last_claim"] + timedelta(hours=24)).isoformat()
 
     return jsonify({
-        "telegram_id": telegram_id,
-        "points": points,
-        "next_claim": next_claim.isoformat() if next_claim else None
+        "telegram_id": user["telegram_id"],
+        "username": user["username"],
+        "points": user["points"],
+        "next_claim": next_claim
     })
 
+# -------------------------
+# API — CLAIM (NO AUTO-CREATE)
+# -------------------------
 @app.route("/api/claim", methods=["POST"])
 def claim():
-    data = request.json or {}
-    telegram_id = data.get("telegram_id") or data.get("user_id")
+    data = request.get_json()
+    telegram_id = data.get("user_id")
 
     if not telegram_id:
-        return jsonify({"error": "telegram_id missing"}), 400
-
-    user = get_or_create_user(telegram_id)
-    _, points, last_claim = user
+        return jsonify({"error": "telegram_id required"}), 400
 
     now = datetime.now(timezone.utc)
 
-    # 🔒 COOLDOWN CHECK (THE ONLY RULE)
-    if last_claim and now < last_claim + timedelta(hours=24):
-        return jsonify({
-            "error": "Claim not available yet",
-            "next_claim": (last_claim + timedelta(hours=24)).isoformat()
-        }), 400
-
-    new_points = points + 100
-
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute(
+        "SELECT points, last_claim FROM users WHERE telegram_id = %s",
+        (telegram_id,)
+    )
+    user = cur.fetchone()
+
+    if not user:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "User not found"}), 404
+
+    if user["last_claim"]:
+        next_claim_time = user["last_claim"] + timedelta(hours=24)
+        if now < next_claim_time:
+            cur.close()
+            conn.close()
+            return jsonify({
+                "error": "Claim not available yet",
+                "next_claim": next_claim_time.isoformat()
+            }), 403
+
+    new_points = user["points"] + 10
+
     cur.execute(
         """
         UPDATE users
@@ -95,16 +134,12 @@ def claim():
         """,
         (new_points, now, telegram_id)
     )
+
     conn.commit()
     cur.close()
     conn.close()
 
     return jsonify({
-        "success": True,
         "points": new_points,
         "next_claim": (now + timedelta(hours=24)).isoformat()
     })
-
-# ---------------- START ----------------
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
