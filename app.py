@@ -1,167 +1,158 @@
 import os
-from datetime import datetime, timedelta, timezone
-
 import psycopg2
-from psycopg2.extras import RealDictCursor
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
+from datetime import datetime, timedelta
 
-# ------------------ CONFIG ------------------
-
-CLAIM_COOLDOWN_HOURS = 6
-CLAIM_REWARD = 10
-
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is not set")
-
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__)
 CORS(app)
 
-# ------------------ DB ------------------
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
+# -------------------------
+# DATABASE CONNECTION
+# -------------------------
 def get_db():
-    return psycopg2.connect(
-        DATABASE_URL,
-        cursor_factory=RealDictCursor,
-        sslmode="require"
-    )
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
-# ------------------ USER HELPERS ------------------
-
-def get_or_create_user(telegram_id: str, username: str | None):
+# -------------------------
+# CREATE USER IF NOT EXISTS
+# -------------------------
+def get_or_create_user(telegram_id, username):
     conn = get_db()
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT telegram_id, username, points, last_claim
-                    FROM users
-                    WHERE telegram_id = %s
-                    """,
-                    (telegram_id,)
-                )
-                user = cur.fetchone()
+    cur = conn.cursor()
 
-                if user:
-                    return user
+    cur.execute(
+        "SELECT telegram_id, points, last_claim FROM users WHERE telegram_id = %s",
+        (telegram_id,)
+    )
+    user = cur.fetchone()
 
-                cur.execute(
-                    """
-                    INSERT INTO users (telegram_id, username, points, last_claim)
-                    VALUES (%s, %s, 0, NULL)
-                    RETURNING telegram_id, username, points, last_claim
-                    """,
-                    (telegram_id, username)
-                )
-                return cur.fetchone()
-    finally:
-        conn.close()
+    if not user:
+        cur.execute(
+            """
+            INSERT INTO users (telegram_id, username, points, last_claim)
+            VALUES (%s, %s, 0, NULL)
+            """,
+            (telegram_id, username)
+        )
+        conn.commit()
+        points = 0
+        last_claim = None
+    else:
+        points = user[1]
+        last_claim = user[2]
 
-# ------------------ ROUTES ------------------
+    cur.close()
+    conn.close()
+    return points, last_claim
 
+# -------------------------
+# HOME / PREVIEW
+# -------------------------
 @app.route("/")
 def preview():
     return render_template("preview.html")
 
+# -------------------------
+# DASHBOARD
+# -------------------------
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
 
-@app.route("/api/user/<telegram_id>")
+# -------------------------
+# GET USER DATA
+# -------------------------
+@app.route("/api/user/<int:telegram_id>")
 def get_user(telegram_id):
-    username = request.args.get("username")
+    username = request.args.get("username", "user")
 
-    user = get_or_create_user(telegram_id, username)
+    points, last_claim = get_or_create_user(telegram_id, username)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
+    cooldown = timedelta(hours=6)
 
-    if user["last_claim"] is None:
-        next_claim_in = 0
+    if last_claim:
+        next_time = last_claim + cooldown
+        seconds_left = max(0, int((next_time - now).total_seconds()))
     else:
-        next_time = user["last_claim"] + timedelta(hours=CLAIM_COOLDOWN_HOURS)
-        next_claim_in = max(0, int((next_time - now).total_seconds()))
+        seconds_left = 0
 
     return jsonify({
-        "telegram_id": user["telegram_id"],
-        "username": user["username"],
-        "points": user["points"],
-        "next_claim_in": next_claim_in
+        "telegram_id": telegram_id,
+        "username": username,
+        "points": points,
+        "next_claim_in": seconds_left
     })
 
+# -------------------------
+# CLAIM ENDPOINT
+# -------------------------
 @app.route("/api/claim", methods=["POST"])
 def claim():
-    data = request.get_json(force=True)
-    telegram_id = str(data.get("user_id"))
-    username = data.get("username")
+    data = request.json
+    telegram_id = data.get("user_id")
+    username = data.get("username", "user")
 
     if not telegram_id:
-        return jsonify({"error": "Missing user_id"}), 400
-
-    now = datetime.now(timezone.utc)
+        return jsonify({"error": "Missing telegram ID"}), 400
 
     conn = get_db()
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT telegram_id, points, last_claim
-                    FROM users
-                    WHERE telegram_id = %s
-                    FOR UPDATE
-                    """,
-                    (telegram_id,)
-                )
-                user = cur.fetchone()
+    cur = conn.cursor()
 
-                if not user:
-                    cur.execute(
-                        """
-                        INSERT INTO users (telegram_id, username, points, last_claim)
-                        VALUES (%s, %s, 0, NULL)
-                        RETURNING telegram_id, points, last_claim
-                        """,
-                        (telegram_id, username)
-                    )
-                    user = cur.fetchone()
+    cur.execute(
+        "SELECT points, last_claim FROM users WHERE telegram_id = %s",
+        (telegram_id,)
+    )
+    user = cur.fetchone()
 
-                last_claim = user["last_claim"]
+    now = datetime.utcnow()
+    cooldown = timedelta(hours=6)
 
-                if last_claim is not None:
-                    elapsed = now - last_claim
-                    if elapsed < timedelta(hours=CLAIM_COOLDOWN_HOURS):
-                        remaining = int(
-                            (timedelta(hours=CLAIM_COOLDOWN_HOURS) - elapsed).total_seconds()
-                        )
-                        return jsonify({
-                            "success": False,
-                            "message": "Claim not available yet",
-                            "next_claim_in": remaining
-                        })
+    if user:
+        points, last_claim = user
 
-                new_points = user["points"] + CLAIM_REWARD
-
-                cur.execute(
-                    """
-                    UPDATE users
-                    SET points = %s,
-                        last_claim = %s
-                    WHERE telegram_id = %s
-                    """,
-                    (new_points, now, telegram_id)
-                )
-
+        if last_claim:
+            elapsed = now - last_claim
+            if elapsed < cooldown:
+                remaining = int((cooldown - elapsed).total_seconds())
+                cur.close()
+                conn.close()
                 return jsonify({
-                    "success": True,
-                    "points": new_points,
-                    "next_claim_in": CLAIM_COOLDOWN_HOURS * 3600
+                    "success": False,
+                    "message": "Claim not available yet",
+                    "next_claim_in": remaining
                 })
-    finally:
-        conn.close()
+        new_points = points + 10
+    else:
+        new_points = 10
 
-# ------------------ RUN ------------------
+    cur.execute(
+        """
+        INSERT INTO users (telegram_id, username, points, last_claim)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (telegram_id)
+        DO UPDATE SET
+            points = EXCLUDED.points,
+            last_claim = EXCLUDED.last_claim,
+            username = EXCLUDED.username
+        """,
+        (telegram_id, username, new_points, now)
+    )
 
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "success": True,
+        "points": new_points,
+        "next_claim_in": int(cooldown.total_seconds())
+    })
+
+# -------------------------
+# RUN LOCAL
+# -------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
