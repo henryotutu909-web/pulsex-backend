@@ -15,6 +15,9 @@ def get_db():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
 def get_or_create_user(telegram_id, username="guest"):
+    if telegram_id is None:
+        raise ValueError("telegram_id is required")
+
     conn = get_db()
     cur = conn.cursor()
 
@@ -72,10 +75,9 @@ def api_user(telegram_id):
     user = get_or_create_user(telegram_id, username)
 
     telegram_id, points, last_claim = user
-
     now = datetime.now(timezone.utc)
-    next_claim = None
 
+    next_claim = None
     if last_claim:
         next_claim = last_claim + timedelta(hours=24)
 
@@ -87,10 +89,14 @@ def api_user(telegram_id):
 
 @app.route("/api/claim", methods=["POST"])
 def claim():
-    data = request.json
-    print("CLAIM REQUEST DATA:", data)
-    telegram_id = data.get("telegram_id")
+    data = request.json or {}
+
+    # OPTION B — accept both keys safely
+    telegram_id = data.get("telegram_id") or data.get("user_id")
     username = data.get("username", "guest")
+
+    if telegram_id is None:
+        return jsonify({"error": "telegram_id missing"}), 400
 
     user = get_or_create_user(telegram_id, username)
     _, points, last_claim = user
@@ -128,5 +134,3 @@ def claim():
 # -----------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
-
