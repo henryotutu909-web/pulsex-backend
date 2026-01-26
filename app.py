@@ -1,28 +1,23 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import psycopg2
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
-# -----------------------
-# DATABASE
-# -----------------------
+# ---------------- DB ----------------
 def get_db():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
-def get_or_create_user(telegram_id, username="guest"):
-    if telegram_id is None:
-        raise ValueError("telegram_id is required")
-
+def get_or_create_user(telegram_id):
     conn = get_db()
     cur = conn.cursor()
 
     cur.execute(
-        "SELECT telegram_id, points, last_claim FROM users WHERE telegram_id = %s",
+        "SELECT telegram_id, points FROM users WHERE telegram_id = %s",
         (telegram_id,)
     )
     user = cur.fetchone()
@@ -30,22 +25,20 @@ def get_or_create_user(telegram_id, username="guest"):
     if not user:
         cur.execute(
             """
-            INSERT INTO users (telegram_id, username, points, last_claim)
-            VALUES (%s, %s, 0, NULL)
-            RETURNING telegram_id, points, last_claim
+            INSERT INTO users (telegram_id, points)
+            VALUES (%s, 0)
+            RETURNING telegram_id, points
             """,
-            (telegram_id, username)
+            (telegram_id,)
         )
-        user = cur.fetchone()
         conn.commit()
+        user = cur.fetchone()
 
     cur.close()
     conn.close()
     return user
 
-# -----------------------
-# PAGES
-# -----------------------
+# ---------------- PAGES ----------------
 @app.route("/")
 def preview():
     return render_template("preview.html")
@@ -54,83 +47,46 @@ def preview():
 def dashboard():
     return render_template("dashboard.html")
 
-@app.route("/tasks")
-def tasks():
-    return render_template("tasks.html")
-
-@app.route("/referrals")
-def referrals():
-    return render_template("referrals.html")
-
-@app.route("/wallet")
-def wallet():
-    return render_template("wallet.html")
-
-# -----------------------
-# API
-# -----------------------
+# ---------------- API ----------------
 @app.route("/api/user/<telegram_id>")
 def api_user(telegram_id):
-    username = request.args.get("username", "guest")
-    user = get_or_create_user(telegram_id, username)
-
-    telegram_id, points, last_claim = user
-    now = datetime.now(timezone.utc)
-
-    next_claim = None
-    if last_claim:
-        next_claim = last_claim + timedelta(hours=24)
-
+    user = get_or_create_user(telegram_id)
     return jsonify({
-        "telegram_id": telegram_id,
-        "points": points,
-        "next_claim": next_claim.isoformat() if next_claim else None
+        "telegram_id": user[0],
+        "points": user[1]
     })
 
 @app.route("/api/claim", methods=["POST"])
 def claim():
     data = request.json or {}
 
-    # OPTION B — accept both keys safely
     telegram_id = data.get("telegram_id") or data.get("user_id")
-    username = data.get("username", "guest")
 
-    if telegram_id is None:
-        return jsonify({"error": "telegram_id missing"}), 400
+    if not telegram_id:
+        return jsonify({"error": "No telegram_id"}), 400
 
-    user = get_or_create_user(telegram_id, username)
-    _, points, last_claim = user
-
-    now = datetime.now(timezone.utc)
-
-    if last_claim and now < last_claim + timedelta(hours=24):
-        return jsonify({"error": "Claim not available yet"}), 400
+    user = get_or_create_user(telegram_id)
+    new_points = user[1] + 100
 
     conn = get_db()
     cur = conn.cursor()
-
-    new_points = points + 100
     cur.execute(
         """
         UPDATE users
         SET points = %s, last_claim = %s
         WHERE telegram_id = %s
         """,
-        (new_points, now, telegram_id)
+        (new_points, datetime.now(timezone.utc), telegram_id)
     )
-
     conn.commit()
     cur.close()
     conn.close()
 
     return jsonify({
         "success": True,
-        "points": new_points,
-        "next_claim": (now + timedelta(hours=24)).isoformat()
+        "points": new_points
     })
 
-# -----------------------
-# START
-# -----------------------
+# ---------------- START ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
