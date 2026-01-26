@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import psycopg2
 from flask import Flask, jsonify, render_template, request
@@ -17,7 +17,7 @@ def get_or_create_user(telegram_id):
     cur = conn.cursor()
 
     cur.execute(
-        "SELECT telegram_id, points FROM users WHERE telegram_id = %s",
+        "SELECT telegram_id, points, last_claim FROM users WHERE telegram_id = %s",
         (telegram_id,)
     )
     user = cur.fetchone()
@@ -25,9 +25,9 @@ def get_or_create_user(telegram_id):
     if not user:
         cur.execute(
             """
-            INSERT INTO users (telegram_id, points)
-            VALUES (%s, 0)
-            RETURNING telegram_id, points
+            INSERT INTO users (telegram_id, points, last_claim)
+            VALUES (%s, 0, NULL)
+            RETURNING telegram_id, points, last_claim
             """,
             (telegram_id,)
         )
@@ -51,22 +51,39 @@ def dashboard():
 @app.route("/api/user/<telegram_id>")
 def api_user(telegram_id):
     user = get_or_create_user(telegram_id)
+    telegram_id, points, last_claim = user
+
+    next_claim = None
+    if last_claim:
+        next_claim = last_claim + timedelta(hours=24)
+
     return jsonify({
-        "telegram_id": user[0],
-        "points": user[1]
+        "telegram_id": telegram_id,
+        "points": points,
+        "next_claim": next_claim.isoformat() if next_claim else None
     })
 
 @app.route("/api/claim", methods=["POST"])
 def claim():
     data = request.json or {}
-
     telegram_id = data.get("telegram_id") or data.get("user_id")
 
     if not telegram_id:
-        return jsonify({"error": "No telegram_id"}), 400
+        return jsonify({"error": "telegram_id missing"}), 400
 
     user = get_or_create_user(telegram_id)
-    new_points = user[1] + 100
+    _, points, last_claim = user
+
+    now = datetime.now(timezone.utc)
+
+    # 🔒 COOLDOWN CHECK (THE ONLY RULE)
+    if last_claim and now < last_claim + timedelta(hours=24):
+        return jsonify({
+            "error": "Claim not available yet",
+            "next_claim": (last_claim + timedelta(hours=24)).isoformat()
+        }), 400
+
+    new_points = points + 100
 
     conn = get_db()
     cur = conn.cursor()
@@ -76,7 +93,7 @@ def claim():
         SET points = %s, last_claim = %s
         WHERE telegram_id = %s
         """,
-        (new_points, datetime.now(timezone.utc), telegram_id)
+        (new_points, now, telegram_id)
     )
     conn.commit()
     cur.close()
@@ -84,7 +101,8 @@ def claim():
 
     return jsonify({
         "success": True,
-        "points": new_points
+        "points": new_points,
+        "next_claim": (now + timedelta(hours=24)).isoformat()
     })
 
 # ---------------- START ----------------
