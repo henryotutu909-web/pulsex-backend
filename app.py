@@ -60,6 +60,9 @@ def preview():
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+@app.route("/upgrade")
+def upgrade():
+    return render_template("upgrade.html")
 
 # -------------------------
 # GET USER DATA
@@ -156,3 +159,4 @@ def claim():
 # -------------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
