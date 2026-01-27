@@ -63,6 +63,9 @@ def dashboard():
 @app.route("/upgrade")
 def upgrade():
     return render_template("upgrade.html")
+@app.route("/battery")
+def battery():
+    return render_template("battery.html")
 
 # -------------------------
 # GET USER DATA
@@ -159,4 +162,5 @@ def claim():
 # -------------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
