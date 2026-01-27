@@ -2,66 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PulseX Dashboard</title>
-
-  <!-- Telegram Mini App -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Telegram Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <style>
-    :root {
-      --bg: #0b1020;
-      --card: #121a33;
-      --accent: #3b82f6;
-      --muted: #9aa4c7;
-      --success: #22c55e;
-      --disabled: #334155;
-    }
-
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont; }
-
     body {
       margin: 0;
-      background: radial-gradient(circle at top, #121a33, #050814);
+      font-family: "Inter", sans-serif;
+      background: radial-gradient(circle at top, #1b1f3b, #0b0d1a);
       color: #fff;
-      min-height: 100vh;
-      padding: 16px;
     }
 
-    .top {
+    .dashboard {
+      max-width: 420px;
+      margin: auto;
+      padding: 16px;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
     }
 
-    .brand { font-size: 20px; font-weight: 700; }
-    .user { font-size: 13px; color: var(--muted); }
+    .top-bar h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
 
-    .card {
-      background: linear-gradient(180deg, #141c3a, #0c1228);
+    .username {
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    .balance-card {
+      background: linear-gradient(135deg, #6a5cff, #00d4ff);
       border-radius: 18px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      margin-bottom: 18px;
     }
 
-    .balance {
-      font-size: 36px;
+    .balance-card .label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    #points {
+      font-size: 42px;
       font-weight: 800;
-      color: var(--accent);
+      margin: 6px 0;
     }
 
-    .label {
+    .unit {
       font-size: 12px;
-      color: var(--muted);
-      margin-top: 4px;
+      opacity: 0.85;
     }
 
-    .countdown {
-      font-size: 18px;
+    .countdown-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    #countdown {
+      font-size: 22px;
+      font-weight: 700;
       margin-top: 6px;
-      font-weight: 600;
+      color: #00ffcc;
     }
 
     .claim-btn {
@@ -71,156 +90,145 @@
       border: none;
       font-size: 16px;
       font-weight: 700;
+      background: linear-gradient(135deg, #00ffcc, #00bfff);
+      color: #000;
       cursor: pointer;
-      transition: .2s;
-      background: var(--accent);
-      color: #fff;
-      margin-top: 10px;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 18px rgba(0,255,204,0.35);
     }
 
     .claim-btn:disabled {
-      background: var(--disabled);
+      opacity: 0.45;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
-    .nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #0a0f22;
+    .bottom-nav {
       display: flex;
       justify-content: space-around;
-      padding: 12px 0;
-      border-top: 1px solid #1e2a55;
+      margin-top: 26px;
+      font-size: 12px;
+      opacity: 0.85;
     }
 
-    .nav span {
-      font-size: 12px;
-      color: var(--muted);
+    .bottom-nav a {
+      color: #fff;
+      text-decoration: none;
     }
   </style>
 </head>
+
 <body>
+  <div class="dashboard">
 
-  <div class="top">
-    <div class="brand">PulseX</div>
-    <div class="user" id="username">@loading…</div>
-  </div>
+    <header class="top-bar">
+      <h2>PulseX</h2>
+      <span class="username" id="username">@loading…</span>
+    </header>
 
-  <div class="card">
-    <div class="balance" id="points">0</div>
-    <div class="label">PULSE POINTS</div>
-  </div>
+    <div class="balance-card">
+      <p class="label">Your Balance</p>
+      <h1 id="points">0</h1>
+      <span class="unit">PULSE POINTS</span>
+    </div>
 
-  <div class="card">
-    <div class="label">Next claim available in</div>
-    <div class="countdown" id="countdown">Loading…</div>
+    <div class="countdown-card">
+      <p>Next claim available in</p>
+      <h3 id="countdown">--:--:--</h3>
+    </div>
 
-    <button class="claim-btn" id="claimBtn" onclick="claim()">
-      Claim Daily Reward
+    <button class="claim-btn" id="claimBtn">
+      Claim Reward
     </button>
+
+    <nav class="bottom-nav">
+      <a href="#">Dashboard</a>
+      <a href="#">Upgrade</a>
+      <a href="#">Boost</a>
+      <a href="#">Wallet</a>
+    </nav>
+
   </div>
 
-  <div class="nav">
-    <span>Dashboard</span>
-    <span>Tasks</span>
-    <span>Referrals</span>
-    <span>Wallet</span>
-  </div>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
 
-<script>
-  const tg = window.Telegram.WebApp;
-  tg.ready();
+    const userId = tg?.initDataUnsafe?.user?.id;
+    const username =
+      tg?.initDataUnsafe?.user?.username
+        ? "@" + tg.initDataUnsafe.user.username
+        : "@user";
 
-  const user = tg.initDataUnsafe?.user;
-  const telegramId = user?.id;
-  const username = user?.username ? '@' + user.username : 'Telegram User';
+    const API_BASE = "";
 
-  document.getElementById('username').innerText = username;
+    document.getElementById("username").innerText = username;
 
-  const CLAIM_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
-  let nextClaimTime = null;
+    let nextClaimSeconds = 0;
+    let countdownInterval = null;
 
-  async function loadUser() {
-    if (!telegramId) {
-      document.getElementById('countdown').innerText = 'Telegram not detected';
-      document.getElementById('claimBtn').disabled = true;
-      return;
+    function formatTime(sec) {
+      const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return `${h}:${m}:${s}`;
     }
 
-    const res = await fetch(`/api/user/${telegramId}?username=${encodeURIComponent(username)}`);
-    const data = await res.json();
-
-    document.getElementById('points').innerText = data.points ?? 0;
-
-    if (!data.last_claim) {
-      nextClaimTime = 0;
-      updateUI();
-      return;
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        if (nextClaimSeconds <= 0) {
+          document.getElementById("countdown").innerText = "Available";
+          document.getElementById("claimBtn").disabled = false;
+          clearInterval(countdownInterval);
+          return;
+        }
+        nextClaimSeconds--;
+        document.getElementById("countdown").innerText = formatTime(nextClaimSeconds);
+      }, 1000);
     }
 
-    nextClaimTime = new Date(data.last_claim).getTime() + CLAIM_INTERVAL;
-    updateUI();
-  }
+    async function loadUser() {
+      const res = await fetch(`/api/user/${userId}?username=${encodeURIComponent(username)}`);
+      const data = await res.json();
 
-  function updateUI() {
-    const now = Date.now();
+      document.getElementById("points").innerText = data.points;
+      nextClaimSeconds = data.next_claim_in;
 
-    if (now >= nextClaimTime) {
-      document.getElementById('countdown').innerText = 'Available';
-      document.getElementById('claimBtn').disabled = false;
-    } else {
-      document.getElementById('claimBtn').disabled = true;
-      updateCountdown();
-    }
-  }
-
-  function updateCountdown() {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const diff = nextClaimTime - now;
-
-      if (diff <= 0) {
-        clearInterval(interval);
-        document.getElementById('countdown').innerText = 'Available';
-        document.getElementById('claimBtn').disabled = false;
-        return;
+      if (nextClaimSeconds > 0) {
+        document.getElementById("claimBtn").disabled = true;
+        startCountdown();
+      } else {
+        document.getElementById("countdown").innerText = "Available";
+        document.getElementById("claimBtn").disabled = false;
       }
+    }
 
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById("claimBtn").addEventListener("click", async () => {
+      document.getElementById("claimBtn").disabled = true;
 
-      document.getElementById('countdown').innerText =
-        `${h}h ${m}m ${s}s`;
-    }, 1000);
-  }
+      const res = await fetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          username: username
+        })
+      });
 
-  async function claim() {
-    document.getElementById('claimBtn').disabled = true;
-    document.getElementById('claimBtn').innerText = 'Claiming…';
+      const data = await res.json();
 
-    const res = await fetch('/api/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: telegramId })
+      if (data.success) {
+        document.getElementById("points").innerText = data.points;
+        nextClaimSeconds = data.next_claim_in;
+        startCountdown();
+      } else {
+        alert(data.message || "Claim not available yet");
+        document.getElementById("claimBtn").disabled = false;
+      }
     });
 
-    const data = await res.json();
-
-    if (data.success) {
-      loadUser();
-    } else {
-      alert(data.error || 'Claim not available yet');
-      loadUser();
-    }
-
-    document.getElementById('claimBtn').innerText = 'Claim Daily Reward';
-  }
-
-  loadUser();
-</script>
-
+    loadUser();
+  </script>
 </body>
 </html>
