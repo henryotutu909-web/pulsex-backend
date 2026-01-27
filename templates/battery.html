@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PulseX Boost</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Telegram Mini App -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #0b0f1a, #020617);
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .back {
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .battery-card {
+            background: radial-gradient(circle at top, #1e293b, #020617);
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
+        }
+
+        .battery-icon {
+            font-size: 40px;
+        }
+
+        .battery-amount {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .battery-label {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .boost-grid {
+            margin-top: 25px;
+            display: grid;
+            gap: 15px;
+        }
+
+        .boost-card {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .boost-info {
+            font-size: 14px;
+        }
+
+        .boost-info b {
+            display: block;
+            font-size: 16px;
+        }
+
+        .boost-btn {
+            background: #374151;
+            color: #9ca3af;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            margin-top: 20px;
+            font-size: 12px;
+            text-align: center;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="back" onclick="history.back()">←</div>
+        <div class="title">Boost & Batteries</div>
+    </div>
+
+    <!-- Battery Balance -->
+    <div class="battery-card">
+        <div class="battery-icon">🔋</div>
+        <div class="battery-amount">0</div>
+        <div class="battery-label">Available Batteries</div>
+    </div>
+
+    <!-- Boost Options -->
+    <div class="boost-grid">
+
+        <div class="boost-card">
+            <div class="boost-info">
+                <b>Quick Charge</b>
+                Reduce claim cooldown by 1 hour
+            </div>
+            <button class="boost-btn">Buy</button>
+        </div>
+
+        <div class="boost-card">
+            <div class="boost-info">
+                <b>Turbo Battery</b>
+                Reduce cooldown by 3 hours
+            </div>
+            <button class="boost-btn">Buy</button>
+        </div>
+
+        <div class="boost-card">
+            <div class="boost-info">
+                <b>Overdrive Core</b>
+                Instant claim reset
+            </div>
+            <button class="boost-btn">Buy</button>
+        </div>
+
+    </div>
+
+    <div class="hint">
+        Payments and boosts will unlock after official launch
+    </div>
+
+</div>
+
+</body>
+</html>
