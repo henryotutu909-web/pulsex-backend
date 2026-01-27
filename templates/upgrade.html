@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PulseX Upgrade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Telegram Mini App -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, sans-serif;
+      background: radial-gradient(circle at top, #1b1f3b, #0b0d1a);
+      color: #fff;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: auto;
+      padding: 16px;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .header h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .balance {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .level-card {
+      background: linear-gradient(135deg, #6a5cff, #00d4ff);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    .level-card h1 {
+      font-size: 36px;
+      margin: 6px 0;
+    }
+
+    .level-card p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .upgrade-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .upgrade-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .upgrade-info h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .upgrade-info span {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .upgrade-btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00ffcc, #00bfff);
+      color: #000;
+      cursor: pointer;
+    }
+
+    .upgrade-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .nav {
+      margin-top: 26px;
+      text-align: center;
+    }
+
+    .nav a {
+      color: #00ffcc;
+      text-decoration: none;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="header">
+      <h2>Upgrade</h2>
+      <span class="balance" id="points">0 pts</span>
+    </div>
+
+    <div class="level-card">
+      <p>Your Current Level</p>
+      <h1 id="level">Level 1</h1>
+      <p>Claim Reward: <b id="reward">+10</b> points</p>
+    </div>
+
+    <div class="upgrade-list">
+
+      <div class="upgrade-item">
+        <div class="upgrade-info">
+          <h3>Level 2</h3>
+          <span>+20 points per claim</span>
+        </div>
+        <button class="upgrade-btn" disabled>200 pts</button>
+      </div>
+
+      <div class="upgrade-item">
+        <div class="upgrade-info">
+          <h3>Level 3</h3>
+          <span>+40 points per claim</span>
+        </div>
+        <button class="upgrade-btn" disabled>500 pts</button>
+      </div>
+
+      <div class="upgrade-item">
+        <div class="upgrade-info">
+          <h3>Level 4</h3>
+          <span>+80 points per claim</span>
+        </div>
+        <button class="upgrade-btn" disabled>1,000 pts</button>
+      </div>
+
+    </div>
+
+    <div class="nav">
+      <a href="/dashboard">← Back to Dashboard</a>
+    </div>
+
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
+
+    const userId = tg?.initDataUnsafe?.user?.id;
+    const username =
+      tg?.initDataUnsafe?.user?.username
+        ? "@" + tg.initDataUnsafe.user.username
+        : "@user";
+
+    async function loadUser() {
+      const res = await fetch(`/api/user/${userId}?username=${encodeURIComponent(username)}`);
+      const data = await res.json();
+
+      document.getElementById("points").innerText = data.points + " pts";
+
+      // TEMP defaults until backend upgrade logic exists
+      const level = data.level || 1;
+      const reward = data.reward || 10;
+
+      document.getElementById("level").innerText = "Level " + level;
+      document.getElementById("reward").innerText = "+" + reward;
+    }
+
+    loadUser();
+  </script>
+</body>
+</html>
