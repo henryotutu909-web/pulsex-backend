@@ -4,20 +4,20 @@
     <meta charset="UTF-8">
     <title>PulseX Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Telegram Mini App -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0b0f1a, #111827);
+            background: linear-gradient(180deg, #0b0f1a, #12172a);
             color: #fff;
         }
 
         .container {
             padding: 20px;
-            max-width: 420px;
-            margin: auto;
         }
 
         .top-bar {
@@ -26,160 +26,193 @@
             align-items: center;
         }
 
-        .username {
+        .wallet-btn {
+            background: #1f2a44;
+            padding: 10px 14px;
+            border-radius: 10px;
             font-size: 14px;
-            opacity: 0.8;
-        }
-
-        .wallet {
-            font-size: 18px;
             cursor: pointer;
         }
 
-        .balance-box {
-            background: #0f172a;
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 20px;
+        .points-box {
+            margin-top: 25px;
             text-align: center;
+            background: #161c33;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 0 15px rgba(0, 153, 255, 0.15);
         }
 
         .points {
-            font-size: 36px;
+            font-size: 38px;
             font-weight: bold;
+            color: #00c2ff;
+        }
+
+        .countdown {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #aaa;
         }
 
         .claim-btn {
-            margin-top: 15px;
-            padding: 14px;
+            margin-top: 18px;
             width: 100%;
-            font-size: 16px;
-            border-radius: 12px;
+            padding: 14px;
+            background: linear-gradient(90deg, #00c2ff, #0066ff);
             border: none;
-            background: #22c55e;
-            color: #000;
+            border-radius: 12px;
+            font-size: 16px;
+            color: #fff;
             cursor: pointer;
         }
 
         .claim-btn:disabled {
-            background: #374151;
-            color: #9ca3af;
+            background: #333;
             cursor: not-allowed;
-        }
-
-        .countdown {
-            margin-top: 10px;
-            font-size: 14px;
-            opacity: 0.8;
         }
 
         .actions {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 12px;
         }
 
-        .action-btn {
+        .action-card {
             flex: 1;
-            padding: 12px;
-            background: #1f2933;
-            border-radius: 12px;
+            background: #161c33;
+            padding: 18px;
+            border-radius: 14px;
             text-align: center;
-            text-decoration: none;
-            color: #fff;
-            font-size: 14px;
+            cursor: pointer;
         }
 
-        .action-btn:hover {
-            background: #374151;
+        .action-card span {
+            display: block;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .username {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
         }
     </style>
 </head>
-<body>
 
+<body>
 <div class="container">
 
-    <!-- Top -->
+    <!-- TOP BAR -->
     <div class="top-bar">
-        <div class="username" id="username">@loading...</div>
-        <div class="wallet">👛</div>
+        <div><strong>PulseX</strong></div>
+        <div class="wallet-btn" onclick="window.location.href='/wallet'">
+            🔗 Wallet
+        </div>
     </div>
 
-    <!-- Balance -->
-    <div class="balance-box">
+    <!-- POINTS -->
+    <div class="points-box">
         <div class="points" id="points">0</div>
-        <div>PulseX Points</div>
+        <div class="countdown" id="countdown">Loading...</div>
 
-        <button class="claim-btn" id="claimBtn" onclick="claim()">Claim</button>
-        <div class="countdown" id="countdown"></div>
+        <button class="claim-btn" id="claimBtn" onclick="claimPoints()">
+            Claim
+        </button>
+
+        <div class="username" id="username">Loading user...</div>
     </div>
 
-    <!-- Actions -->
+    <!-- ACTIONS -->
     <div class="actions">
-        <a href="/upgrade" class="action-btn">⚡ Upgrade</a>
-        <a href="/wallet" class="action-btn">➕ Battery</a>
+
+        <!-- UPGRADE -->
+        <div class="action-card" onclick="window.location.href='/upgrade'">
+            🚀
+            <span>Upgrade</span>
+        </div>
+
+        <!-- BATTERY -->
+        <div class="action-card" onclick="window.location.href='/battery'">
+            🔋
+            <span>Boost</span>
+        </div>
+
+        <!-- AIRDROP -->
+        <div class="action-card" onclick="alert('Airdrop info coming soon')">
+            🎁
+            <span>Airdrop</span>
+        </div>
+
     </div>
 
 </div>
 
 <script>
-    const tg = window.Telegram?.WebApp;
-    const user = tg?.initDataUnsafe?.user;
+    const tg = window.Telegram.WebApp;
+    tg.ready();
 
-    const userId = user?.id;
-    const username = user?.username ? "@" + user.username : "Guest";
+    const userId = tg.initDataUnsafe?.user?.id;
+    const username = tg.initDataUnsafe?.user?.username || "Guest";
 
-    document.getElementById("username").innerText = username;
+    document.getElementById("username").innerText = "@" + username;
 
-    async function loadUser() {
-        const res = await fetch(`/api/user/${userId}?username=${username}`);
-        const data = await res.json();
+    function fetchUser() {
+        fetch(`/api/user/${userId}?username=@${username}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("points").innerText = data.points;
 
-        document.getElementById("points").innerText = data.points;
-
-        if (data.next_claim_in > 0) {
-            disableClaim(data.next_claim_in);
-        }
+                if (data.next_claim_in > 0) {
+                    startCountdown(data.next_claim_in);
+                    document.getElementById("claimBtn").disabled = true;
+                } else {
+                    document.getElementById("countdown").innerText = "Available";
+                    document.getElementById("claimBtn").disabled = false;
+                }
+            });
     }
 
-    function disableClaim(seconds) {
-        const btn = document.getElementById("claimBtn");
-        btn.disabled = true;
-
-        const cd = document.getElementById("countdown");
+    function startCountdown(seconds) {
+        const el = document.getElementById("countdown");
         let remaining = seconds;
 
         const interval = setInterval(() => {
             if (remaining <= 0) {
-                btn.disabled = false;
-                cd.innerText = "Claim available";
+                el.innerText = "Available";
+                document.getElementById("claimBtn").disabled = false;
                 clearInterval(interval);
             } else {
                 const h = Math.floor(remaining / 3600);
                 const m = Math.floor((remaining % 3600) / 60);
                 const s = remaining % 60;
-                cd.innerText = `Next claim in ${h}h ${m}m ${s}s`;
+                el.innerText = `${h}h ${m}m ${s}s`;
                 remaining--;
             }
         }, 1000);
     }
 
-    async function claim() {
-        const res = await fetch("/api/claim", {
+    function claimPoints() {
+        fetch("/api/claim", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: userId, username })
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                fetchUser();
+            } else {
+                alert(data.message || "Claim not available yet");
+            }
         });
-
-        const data = await res.json();
-        if (data.success) {
-            loadUser();
-        } else {
-            alert(data.error || "Claim not available");
-        }
     }
 
-    loadUser();
+    fetchUser();
 </script>
 
 </body>
