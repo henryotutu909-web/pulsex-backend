@@ -9,19 +9,33 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    body {
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
       margin: 0;
+    }
+
+    body {
       font-family: Arial, sans-serif;
       background: radial-gradient(circle at top, #0b1d2a, #050b12);
       color: #fff;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
     }
 
     .container {
+      flex: 1;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .header {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -37,10 +51,9 @@
       cursor: pointer;
     }
 
-    /* 🔥 POINTS + COIN ROW */
+    /* POINTS + COIN */
     .points-row {
       display: flex;
-      justify-content: center;
       align-items: center;
       gap: 10px;
       margin: 30px 0 10px;
@@ -54,7 +67,11 @@
     .coin {
       width: 36px;
       height: 36px;
-      filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+      border-radius: 50%;
+      object-fit: cover;
+      background: transparent;
+      box-shadow: none;
+      display: block;
     }
 
     .airdrop {
@@ -93,17 +110,22 @@
       opacity: 0.85;
     }
 
+    /* BOTTOM NAV */
     .nav {
+      width: 100%;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      background: linear-gradient(to top, rgba(5,11,18,0.95), rgba(5,11,18,0.7));
       display: flex;
       justify-content: space-around;
-      margin-top: 40px;
-      padding-top: 15px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 14px 0;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
 
     .nav div {
       font-size: 14px;
-      opacity: 0.85;
+      opacity: 0.9;
       cursor: pointer;
     }
   </style>
@@ -117,10 +139,9 @@
       <div class="wallet">👛</div>
     </div>
 
-    <!-- ✅ POINTS + COIN -->
     <div class="points-row">
       <div class="points" id="points">0</div>
-      <img src="/static/pulsex-coin.png" alt="PulseX Coin" class="coin">
+      <img src="/static/pulsex-coin.png" alt="PulseX Coin" class="coin" />
     </div>
 
     <div class="airdrop">Airdrop eligibility: Active</div>
@@ -128,12 +149,12 @@
     <button class="claim-btn" id="claimBtn">CLAIM</button>
     <div class="countdown" id="countdown">Checking cooldown...</div>
 
-    <div class="nav">
-      <div>⚡ Upgrade</div>
-      <div>🔋 Battery</div>
-      <div>🎁 Airdrop</div>
-    </div>
+  </div>
 
+  <div class="nav">
+    <div>⚡ Upgrade</div>
+    <div>🔋 Battery</div>
+    <div>🎁 Airdrop</div>
   </div>
 
 <script>
@@ -211,11 +232,9 @@
     if (data.success) {
       pointsEl.textContent = data.points;
       cooldownSeconds = data.next_claim_in;
-      updateUI();
-    } else {
-      cooldownSeconds = data.next_claim_in || 0;
-      updateUI();
     }
+
+    updateUI();
   });
 
   loadUser();
