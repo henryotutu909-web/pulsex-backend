@@ -4,41 +4,31 @@
   <meta charset="UTF-8" />
   <title>PulseX Upgrade</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: radial-gradient(circle at top, #0b1d2a, #050b12);
       color: #fff;
-      animation: bgMove 18s ease-in-out infinite alternate;
-    }
-
-    @keyframes bgMove {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
     }
 
     .container {
       padding: 18px;
-      padding-bottom: 100px;
+      padding-bottom: 90px;
     }
 
     .top {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 20px;
     }
 
     .back {
       font-size: 22px;
       cursor: pointer;
-      opacity: 0.85;
     }
 
     .title {
@@ -51,24 +41,7 @@
       border-radius: 18px;
       padding: 18px;
       margin-bottom: 24px;
-      box-shadow: 0 0 30px rgba(0,198,255,0.15);
-    }
-
-    .current h3 {
-      margin: 0 0 6px;
-      font-size: 14px;
-      opacity: 0.8;
-    }
-
-    .current .stage {
-      font-size: 32px;
-      font-weight: bold;
-    }
-
-    .current .earn {
-      margin-top: 6px;
-      opacity: 0.8;
-      font-size: 14px;
+      box-shadow: 0 0 25px rgba(0,198,255,0.15);
     }
 
     .stage-card {
@@ -77,20 +50,8 @@
       padding: 16px;
       margin-bottom: 16px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      box-shadow: 0 0 25px rgba(0,114,255,0.15);
-      animation: float 4s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
-      100% { transform: translateY(0); }
-    }
-
-    .stage-info {
-      max-width: 65%;
+      align-items: center;
     }
 
     .stage-info h4 {
@@ -112,70 +73,110 @@
       border-radius: 14px;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(0,114,255,0.6);
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    .upgrade-btn:active {
-      transform: scale(0.95);
     }
 
     .upgrade-btn:disabled {
       opacity: 0.5;
-      box-shadow: none;
       cursor: not-allowed;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
+<div class="container">
 
-    <div class="top">
-      <div class="back" onclick="history.back()">←</div>
-      <div class="title">Upgrade</div>
-    </div>
-
-    <!-- CURRENT STAGE -->
-    <div class="current">
-      <h3>Your current stage</h3>
-      <div class="stage">Stage 1</div>
-      <div class="earn">Earn 100 PulseX every claim</div>
-    </div>
-
-    <!-- NEXT STAGES -->
-    <div class="stage-card">
-      <div class="stage-info">
-        <h4>Stage 2</h4>
-        <p>Earn 150 PulseX per claim</p>
-        <p>Cost: 1,000 PulseX</p>
-      </div>
-      <button class="upgrade-btn">Upgrade</button>
-    </div>
-
-    <div class="stage-card">
-      <div class="stage-info">
-        <h4>Stage 3</h4>
-        <p>Earn 220 PulseX per claim</p>
-        <p>Cost: 3,000 PulseX</p>
-      </div>
-      <button class="upgrade-btn">Upgrade</button>
-    </div>
-
-    <div class="stage-card">
-      <div class="stage-info">
-        <h4>Stage 4</h4>
-        <p>Earn 320 PulseX per claim</p>
-        <p>Cost: 7,000 PulseX</p>
-      </div>
-      <button class="upgrade-btn">Upgrade</button>
-    </div>
-
+  <div class="top">
+    <div class="back" onclick="history.back()">←</div>
+    <div class="title">Upgrade</div>
   </div>
 
+  <div class="current">
+    <div id="currentStage">Stage 1</div>
+    <div id="currentPoints">Loading points...</div>
+  </div>
+
+  <div class="stage-card">
+    <div class="stage-info">
+      <h4>Stage 2</h4>
+      <p>Earn 150 PulseX per claim</p>
+      <p>Cost: 1,000 PulseX</p>
+    </div>
+    <button class="upgrade-btn" onclick="upgrade(2, 1000)">Upgrade</button>
+  </div>
+
+  <div class="stage-card">
+    <div class="stage-info">
+      <h4>Stage 3</h4>
+      <p>Earn 220 PulseX per claim</p>
+      <p>Cost: 3,000 PulseX</p>
+    </div>
+    <button class="upgrade-btn" onclick="upgrade(3, 3000)">Upgrade</button>
+  </div>
+
+</div>
+
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.ready();
+const tg = window.Telegram.WebApp;
+tg.ready();
+
+const user = tg.initDataUnsafe?.user;
+const userId = user?.id;
+const username = user?.username ? "@" + user.username : "User";
+
+let userPoints = 0;
+let userStage = 1;
+
+async function loadUser() {
+  const res = await fetch(`/api/user/${userId}?username=${encodeURIComponent(username)}`);
+  const data = await res.json();
+
+  userPoints = data.points || 0;
+
+  document.getElementById("currentStage").textContent = `Stage ${userStage}`;
+  document.getElementById("currentPoints").textContent = `Balance: ${userPoints} PulseX`;
+}
+
+async function upgrade(targetStage, cost) {
+  if (userPoints < cost) {
+    alert("Not enough PulseX to upgrade");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/upgrade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        target_stage: targetStage
+      })
+    });
+
+    if (!res.ok) throw new Error("Backend not ready");
+
+    const data = await res.json();
+
+    if (data.success) {
+      userPoints = data.points;
+      userStage = data.stage;
+      alert("Upgrade successful!");
+      loadUser();
+    } else {
+      alert(data.message || "Upgrade failed");
+    }
+
+  } catch {
+    // SAFE FALLBACK
+    userPoints -= cost;
+    userStage = targetStage;
+
+    alert("Upgrade simulated (backend coming soon)");
+    loadUser();
+  }
+}
+
+loadUser();
 </script>
+
 </body>
 </html>
