@@ -5,13 +5,10 @@
   <title>PulseX Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Telegram Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     html, body {
       height: 100%;
@@ -21,9 +18,15 @@
     body {
       font-family: Arial, sans-serif;
       background: radial-gradient(circle at top, #0b1d2a, #050b12);
+      animation: bgMove 18s ease-in-out infinite alternate;
       color: #fff;
       display: flex;
       flex-direction: column;
+    }
+
+    @keyframes bgMove {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
     }
 
     .container {
@@ -46,12 +49,22 @@
       opacity: 0.85;
     }
 
-    .wallet {
-      font-size: 18px;
+    .connect {
+      font-size: 14px;
+      color: #00c6ff;
       cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(0,198,255,0.35);
+      transition: all 0.2s ease;
     }
 
-    /* POINTS + COIN */
+    .connect:active {
+      transform: scale(0.95);
+      background: rgba(0,198,255,0.1);
+    }
+
+    /* POINTS */
     .points-row {
       display: flex;
       align-items: center;
@@ -62,6 +75,11 @@
     .points {
       font-size: 42px;
       font-weight: bold;
+      transition: transform 0.2s ease;
+    }
+
+    .points.bump {
+      transform: scale(1.08);
     }
 
     .coin {
@@ -69,35 +87,70 @@
       height: 36px;
       border-radius: 50%;
       object-fit: cover;
-      background: transparent;
-      box-shadow: none;
-      display: block;
+      animation: coinSpin 10s linear infinite;
+    }
+
+    @keyframes coinSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
     .airdrop {
       font-size: 14px;
-      opacity: 0.7;
-      margin-bottom: 30px;
+      opacity: 0.75;
+      margin-bottom: 28px;
+    }
+
+    /* CLAIM BUTTON */
+    .claim-wrap {
+      position: relative;
+      margin-top: 10px;
+    }
+
+    .claim-glow {
+      position: absolute;
+      inset: -25px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,198,255,0.35), transparent 70%);
+      filter: blur(25px);
+      animation: pulseGlow 3s ease-in-out infinite;
+      z-index: 0;
+    }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
     }
 
     .claim-btn {
+      position: relative;
+      z-index: 1;
       width: 220px;
       height: 220px;
       border-radius: 50%;
       border: none;
-      background: radial-gradient(circle, #00c6ff, #0072ff);
+      background: radial-gradient(circle at top, #00c6ff, #0072ff);
       color: #fff;
       font-size: 22px;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 0 40px rgba(0, 114, 255, 0.6);
+      box-shadow: 0 0 40px rgba(0,114,255,0.6);
       transition: transform 0.15s ease, opacity 0.15s ease;
+      animation: breathe 2.8s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
     }
 
     .claim-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       box-shadow: none;
+      animation: none;
     }
 
     .claim-btn:active {
@@ -105,12 +158,12 @@
     }
 
     .countdown {
-      margin-top: 20px;
+      margin-top: 18px;
       font-size: 16px;
       opacity: 0.85;
     }
 
-    /* BOTTOM NAV */
+    /* NAV */
     .nav {
       width: 100%;
       position: fixed;
@@ -127,6 +180,11 @@
       font-size: 14px;
       opacity: 0.9;
       cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .nav div:active {
+      transform: scale(0.9);
     }
   </style>
 </head>
@@ -136,17 +194,21 @@
 
     <div class="header">
       <div class="username" id="username">Loading...</div>
-      <div class="wallet">👛</div>
+      <div class="connect">Connect</div>
     </div>
 
     <div class="points-row">
       <div class="points" id="points">0</div>
-      <img src="/static/pulsex-coin.png" alt="PulseX Coin" class="coin" />
+      <img src="/static/pulsex-coin.png" class="coin" />
     </div>
 
     <div class="airdrop">Airdrop eligibility: Active</div>
 
-    <button class="claim-btn" id="claimBtn">CLAIM</button>
+    <div class="claim-wrap">
+      <div class="claim-glow"></div>
+      <button class="claim-btn" id="claimBtn">CLAIM</button>
+    </div>
+
     <div class="countdown" id="countdown">Checking cooldown...</div>
 
   </div>
@@ -176,19 +238,16 @@
   usernameEl.textContent = username;
 
   async function loadUser() {
-    if (!userId) {
-      countdownEl.textContent = "Telegram user not detected";
-      claimBtn.disabled = true;
-      return;
-    }
-
     const res = await fetch(`/api/user/${userId}?username=${encodeURIComponent(username)}`);
     const data = await res.json();
-
     pointsEl.textContent = data.points;
     cooldownSeconds = data.next_claim_in || 0;
-
     updateUI();
+  }
+
+  function bumpPoints() {
+    pointsEl.classList.add("bump");
+    setTimeout(() => pointsEl.classList.remove("bump"), 200);
   }
 
   function updateUI() {
@@ -204,7 +263,6 @@
 
     countdownTimer = setInterval(() => {
       cooldownSeconds--;
-
       if (cooldownSeconds <= 0) {
         clearInterval(countdownTimer);
         countdownEl.textContent = "Claim available";
@@ -228,12 +286,11 @@
     });
 
     const data = await res.json();
-
     if (data.success) {
       pointsEl.textContent = data.points;
+      bumpPoints();
       cooldownSeconds = data.next_claim_in;
     }
-
     updateUI();
   });
 
