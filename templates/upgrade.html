@@ -1,109 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>PulseX Upgrade</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Telegram Mini App -->
+  <meta charset="UTF-8" />
+  <title>PulseX Upgrade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0b0f1a, #111827);
-            color: #fff;
-        }
 
-        .container {
-            padding: 20px;
-            max-width: 420px;
-            margin: auto;
-        }
+  <style>
+    * { box-sizing: border-box; }
 
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #0b1d2a, #050b12);
+      color: #fff;
+      animation: bgMove 18s ease-in-out infinite alternate;
+    }
 
-        .back {
-            font-size: 20px;
-            cursor: pointer;
-        }
+    @keyframes bgMove {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
 
-        .title {
-            font-size: 18px;
-            font-weight: bold;
-        }
+    .container {
+      padding: 18px;
+      padding-bottom: 100px;
+    }
 
-        .card {
-            background: #0f172a;
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 20px;
-        }
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
 
-        .level {
-            font-size: 22px;
-            font-weight: bold;
-        }
+    .back {
+      font-size: 22px;
+      cursor: pointer;
+      opacity: 0.85;
+    }
 
-        .stat {
-            margin-top: 10px;
-            font-size: 14px;
-            opacity: 0.85;
-        }
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+    }
 
-        .upgrade-btn {
-            margin-top: 20px;
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            font-size: 16px;
-            background: #374151;
-            color: #9ca3af;
-            cursor: not-allowed;
-        }
+    .current {
+      background: linear-gradient(135deg, #0f2a3d, #07131f);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 30px rgba(0,198,255,0.15);
+    }
 
-        .hint {
-            margin-top: 10px;
-            font-size: 12px;
-            opacity: 0.6;
-            text-align: center;
-        }
-    </style>
+    .current h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .current .stage {
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    .current .earn {
+      margin-top: 6px;
+      opacity: 0.8;
+      font-size: 14px;
+    }
+
+    .stage-card {
+      background: linear-gradient(135deg, #0c2234, #06121d);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 0 25px rgba(0,114,255,0.15);
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+
+    .stage-info {
+      max-width: 65%;
+    }
+
+    .stage-info h4 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .stage-info p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: 0.75;
+    }
+
+    .upgrade-btn {
+      background: radial-gradient(circle at top, #00c6ff, #0072ff);
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,114,255,0.6);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .upgrade-btn:active {
+      transform: scale(0.95);
+    }
+
+    .upgrade-btn:disabled {
+      opacity: 0.5;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="container">
 
-<div class="container">
-
-    <!-- Header -->
-    <div class="header">
-        <div class="back" onclick="history.back()">←</div>
-        <div class="title">Upgrade</div>
+    <div class="top">
+      <div class="back" onclick="history.back()">←</div>
+      <div class="title">Upgrade</div>
     </div>
 
-    <!-- Current Level -->
-    <div class="card">
-        <div class="level">Level 1 · Starter</div>
-        <div class="stat">Points per claim: <b>+10</b></div>
-        <div class="stat">Claim cooldown: <b>6 hours</b></div>
+    <!-- CURRENT STAGE -->
+    <div class="current">
+      <h3>Your current stage</h3>
+      <div class="stage">Stage 1</div>
+      <div class="earn">Earn 100 PulseX every claim</div>
     </div>
 
-    <!-- Next Level -->
-    <div class="card">
-        <div class="level">Next Level · Booster</div>
-        <div class="stat">Points per claim: <b>+20</b></div>
-        <div class="stat">Upgrade cost: <b>1,000 Points</b></div>
-
-        <button class="upgrade-btn">Upgrade (Coming Soon)</button>
-        <div class="hint">
-            Upgrades will be enabled after launch
-        </div>
+    <!-- NEXT STAGES -->
+    <div class="stage-card">
+      <div class="stage-info">
+        <h4>Stage 2</h4>
+        <p>Earn 150 PulseX per claim</p>
+        <p>Cost: 1,000 PulseX</p>
+      </div>
+      <button class="upgrade-btn">Upgrade</button>
     </div>
 
-</div>
+    <div class="stage-card">
+      <div class="stage-info">
+        <h4>Stage 3</h4>
+        <p>Earn 220 PulseX per claim</p>
+        <p>Cost: 3,000 PulseX</p>
+      </div>
+      <button class="upgrade-btn">Upgrade</button>
+    </div>
 
+    <div class="stage-card">
+      <div class="stage-info">
+        <h4>Stage 4</h4>
+        <p>Earn 320 PulseX per claim</p>
+        <p>Cost: 7,000 PulseX</p>
+      </div>
+      <button class="upgrade-btn">Upgrade</button>
+    </div>
+
+  </div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+</script>
 </body>
 </html>
