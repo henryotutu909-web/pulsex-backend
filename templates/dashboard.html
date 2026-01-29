@@ -37,8 +37,8 @@
       cursor: pointer;
     }
 
-    /* 🔹 POINTS + COIN */
-    .points-wrapper {
+    /* 🔥 POINTS + COIN */
+    .points-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -51,16 +51,10 @@
       font-weight: bold;
     }
 
-    .coin-icon {
+    .coin-logo {
       width: 36px;
       height: 36px;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
-      100% { transform: translateY(0); }
+      filter: drop-shadow(0 0 8px rgba(0, 198, 255, 0.8));
     }
 
     .airdrop {
@@ -123,10 +117,10 @@
       <div class="wallet">👛</div>
     </div>
 
-    <!-- 🔹 POINTS + COIN -->
-    <div class="points-wrapper">
+    <!-- ✅ POINTS WITH COIN -->
+    <div class="points-wrap">
       <div class="points" id="points">0</div>
-      <img src="/static/coin.png" class="coin-icon" alt="PulseX Coin">
+      <img src="/static/pulsex-coin.png" alt="PulseX Coin" class="coin-logo">
     </div>
 
     <div class="airdrop">Airdrop eligibility: Active</div>
