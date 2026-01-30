@@ -9,12 +9,8 @@ CORS(app)
 
 # ---------------- DB ----------------
 def get_db():
-    return psycopg2.connect(
-        host=os.environ["DB_HOST"],
-        dbname=os.environ["DB_NAME"],
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-        port=os.environ.get("DB_PORT", 5432)
+    return psycopg2.connect(os.environ["DATABASE_URL"])
+
     )
 
 # ---------------- CONFIG ----------------
@@ -175,4 +171,5 @@ def upgrade():
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run()
+
 
