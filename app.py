@@ -122,10 +122,11 @@ def claim():
     return jsonify({
         "success": True,
         "points": new_points,
-        "next_claim_in": 05 * 60 * 60
+        "next_claim_in": 5 * 60 * 60
     })
 
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
