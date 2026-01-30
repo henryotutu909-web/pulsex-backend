@@ -68,6 +68,11 @@ def preview():
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+    
+    @app.route("/upgrade")
+def upgrade_page():
+    return render_template("upgrade.html")
+
 
 # =========================
 # API
@@ -216,3 +221,4 @@ def upgrade():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
