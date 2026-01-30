@@ -54,7 +54,7 @@ def get_user(telegram_id):
     now = datetime.now(timezone.utc)
 
     if last_claim:
-        next_time = last_claim + timedelta(hours=24)
+        next_time = last_claim + timedelta(hours=6)
         next_claim_in = max(0, int((next_time - now).total_seconds()))
     else:
         next_claim_in = 0
@@ -97,8 +97,8 @@ def claim():
 
     now = datetime.now(timezone.utc)
 
-    if last_claim and (now - last_claim) < timedelta(hours=24):
-        next_claim_in = int((last_claim + timedelta(hours=24) - now).total_seconds())
+    if last_claim and (now - last_claim) < timedelta(hours=6):
+        next_claim_in = int((last_claim + timedelta(hours=6) - now).total_seconds())
         cur.close()
         conn.close()
         return jsonify({
@@ -122,9 +122,10 @@ def claim():
     return jsonify({
         "success": True,
         "points": new_points,
-        "next_claim_in": 24 * 60 * 60
+        "next_claim_in": 05 * 60 * 60
     })
 
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
