@@ -27,9 +27,11 @@ UPGRADE_TABLE = {
 }
 
 # ---------------- PAGES ----------------
+from flask import redirect, url_for
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return redirect("/dashboard")
 
 @app.route("/dashboard")
 def dashboard():
@@ -173,3 +175,4 @@ def upgrade():
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run()
+
