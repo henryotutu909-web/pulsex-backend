@@ -69,7 +69,7 @@ def preview():
 def dashboard():
     return render_template("dashboard.html")
     
-    @app.route("/upgrade")
+@app.route("/upgrade")
 def upgrade_page():
     return render_template("upgrade.html")
 
@@ -221,4 +221,5 @@ def upgrade():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
