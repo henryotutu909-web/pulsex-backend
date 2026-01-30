@@ -11,8 +11,6 @@ CORS(app)
 def get_db():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
-    )
-
 # ---------------- CONFIG ----------------
 CLAIM_COOLDOWN = 6 * 60 * 60  # 6 hours
 
@@ -171,5 +169,6 @@ def upgrade():
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run()
+
 
 
