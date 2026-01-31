@@ -139,11 +139,11 @@ def claim():
 def upgrade():
     data = request.get_json(force=True)
 
-telegram_id = data.get("user_id")
-target_stage = int(data.get("target_stage", 0))
+    telegram_id = data.get("user_id")
+    target_stage = int(data.get("target_stage", 0))
 
-if not telegram_id or target_stage <= 0:
-    return jsonify({"success": False, "message": "Invalid request"}), 400
+    if not telegram_id or target_stage <= 0:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
 
     conn = get_db()
     cur = conn.cursor()
@@ -159,20 +159,19 @@ if not telegram_id or target_stage <= 0:
     if not row:
         cur.close()
         conn.close()
-        return jsonify({"success": False, "message": "User not found"}), 400
+        return jsonify({"success": False}), 400
 
     points, level = row
 
-    # ✅ Enforce ONE LEVEL AT A TIME
+    # one-level-at-a-time rule
     if target_stage != level + 1:
         cur.close()
         conn.close()
         return jsonify({
             "success": False,
-            "message": "You can only upgrade one level at a time"
+            "message": "You must upgrade one level at a time"
         })
 
-    # ✅ Max level cap
     if level >= 50:
         cur.close()
         conn.close()
@@ -181,8 +180,7 @@ if not telegram_id or target_stage <= 0:
             "message": "Max level reached"
         })
 
-    # ✅ Cost formula (scales nicely)
-    upgrade_cost = 100 * (target_stage ** 2)
+    upgrade_cost = 100 * (level ** 2)
 
     if points < upgrade_cost:
         cur.close()
@@ -193,14 +191,13 @@ if not telegram_id or target_stage <= 0:
             "needed": upgrade_cost
         })
 
-    new_level = target_stage
+    new_level = level + 1
     new_points = points - upgrade_cost
     new_reward = 10 + (new_level - 1) * 6
 
     cur.execute("""
         UPDATE users
-        SET level = %s,
-            points = %s
+        SET level = %s, points = %s
         WHERE telegram_id = %s
     """, (new_level, new_points, telegram_id))
 
@@ -215,9 +212,11 @@ if not telegram_id or target_stage <= 0:
         "reward": new_reward
     })
 
+
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
