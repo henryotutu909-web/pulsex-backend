@@ -139,6 +139,10 @@ def claim():
 def upgrade():
     data = request.json
     telegram_id = data.get("user_id")
+    target_stage = data.get("target_stage")
+
+    if not telegram_id or not target_stage:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
 
     conn = get_db()
     cur = conn.cursor()
@@ -154,10 +158,20 @@ def upgrade():
     if not row:
         cur.close()
         conn.close()
-        return jsonify({"success": False}), 400
+        return jsonify({"success": False, "message": "User not found"}), 400
 
     points, level = row
 
+    # ✅ Enforce ONE LEVEL AT A TIME
+    if target_stage != level + 1:
+        cur.close()
+        conn.close()
+        return jsonify({
+            "success": False,
+            "message": "You can only upgrade one level at a time"
+        })
+
+    # ✅ Max level cap
     if level >= 50:
         cur.close()
         conn.close()
@@ -166,23 +180,26 @@ def upgrade():
             "message": "Max level reached"
         })
 
-    upgrade_cost = 100 * (level ** 2)
+    # ✅ Cost formula (scales nicely)
+    upgrade_cost = 100 * (target_stage ** 2)
 
     if points < upgrade_cost:
         cur.close()
         conn.close()
         return jsonify({
             "success": False,
+            "message": "Not enough PulseX",
             "needed": upgrade_cost
         })
 
-    new_level = level + 1
+    new_level = target_stage
     new_points = points - upgrade_cost
     new_reward = 10 + (new_level - 1) * 6
 
     cur.execute("""
         UPDATE users
-        SET level = %s, points = %s
+        SET level = %s,
+            points = %s
         WHERE telegram_id = %s
     """, (new_level, new_points, telegram_id))
 
@@ -200,6 +217,7 @@ def upgrade():
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
