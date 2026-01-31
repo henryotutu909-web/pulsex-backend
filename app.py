@@ -21,6 +21,11 @@ def index():
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+    
+@app.route("/upgrade")
+def upgrade_page():
+    return render_template("upgrade.html")
+
 
 # -------------------- GET USER --------------------
 @app.route("/api/user/<int:telegram_id>")
@@ -195,3 +200,4 @@ def upgrade():
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
