@@ -137,12 +137,13 @@ def claim():
 # -------------------- UPGRADE --------------------
 @app.route("/api/upgrade", methods=["POST"])
 def upgrade():
-    data = request.json
-    telegram_id = data.get("user_id")
-    target_stage = data.get("target_stage")
+    data = request.get_json(force=True)
 
-    if not telegram_id or not target_stage:
-        return jsonify({"success": False, "message": "Invalid request"}), 400
+telegram_id = data.get("user_id")
+target_stage = int(data.get("target_stage", 0))
+
+if not telegram_id or target_stage <= 0:
+    return jsonify({"success": False, "message": "Invalid request"}), 400
 
     conn = get_db()
     cur = conn.cursor()
@@ -217,6 +218,7 @@ def upgrade():
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
