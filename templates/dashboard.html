@@ -214,12 +214,16 @@
   </div>
 
   <div class="nav">
-    <div>⚡ Upgrade</div>
+    <div id="upgradeBtn" onclick="goToUpgrade()">⚡ Upgrade</div>
     <div>🔋 Battery</div>
     <div>🎁 Airdrop</div>
   </div>
 
 <script>
+  function goToUpgrade() {
+    window.location.href = "/upgrade";
+  }
+
   const tg = window.Telegram.WebApp;
   tg.ready();
 
@@ -298,3 +302,4 @@
 </script>
 </body>
 </html>
+
