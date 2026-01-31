@@ -133,75 +133,6 @@ def claim():
         "points": new_points,
         "next_claim_in": 5 * 60 * 60
     })
-    
-# -------------------- UPGRADE --------------------
-@app.route("/api/upgrade", methods=["POST"])
-def upgrade():
-    data = request.json
-    telegram_id = data.get("user_id")
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    # Lock row to prevent double upgrades
-    cur.execute("""
-        SELECT level, points
-        FROM users
-        WHERE telegram_id = %s
-        FOR UPDATE
-    """, (telegram_id,))
-
-    row = cur.fetchone()
-    if not row:
-        cur.close()
-        conn.close()
-        return jsonify({"success": False, "message": "User not found"}), 400
-
-    level, points = row
-
-    MAX_LEVEL = 50
-
-    if level >= MAX_LEVEL:
-        cur.close()
-        conn.close()
-        return jsonify({
-            "success": False,
-            "message": "Max level reached"
-        })
-
-    # 🔢 Upgrade cost formula (simple + scalable)
-    # Level 1 → 2 costs 100
-    # Level 2 → 3 costs 200
-    # ...
-    upgrade_cost = level * 100
-
-    if points < upgrade_cost:
-        cur.close()
-        conn.close()
-        return jsonify({
-            "success": False,
-            "message": "Not enough points",
-            "required": upgrade_cost
-        })
-
-    new_level = level + 1
-    new_points = points - upgrade_cost
-
-    cur.execute("""
-        UPDATE users
-        SET level = %s, points = %s
-        WHERE telegram_id = %s
-    """, (new_level, new_points, telegram_id))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({
-        "success": True,
-        "new_level": new_level,
-        "points": new_points
-    })
 
 # -------------------- UPGRADE --------------------
 @app.route("/api/upgrade", methods=["POST"])
@@ -269,5 +200,6 @@ def upgrade():
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
