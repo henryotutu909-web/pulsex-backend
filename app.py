@@ -65,7 +65,7 @@ def get_user(telegram_id):
         next_claim_in = 0
 
     # reward derived from level (NOT stored)
-    reward = 1000 + (level - 1) * 6
+    reward = 10 + (level - 1) * 6
 
     cur.close()
     conn.close()
@@ -115,7 +115,7 @@ def claim():
             "next_claim_in": next_claim_in
         })
 
-    reward = 1000 + (level - 1) * 6
+    reward = 10 + (level - 1) * 6
     new_points = points + reward
 
     cur.execute("""
@@ -216,6 +216,7 @@ def upgrade():
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
